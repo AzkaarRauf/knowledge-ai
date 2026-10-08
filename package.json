@@ -5,9 +5,13 @@
     "main": "index.js",
     "scripts": {
         "dev": "pnpm -r --parallel dev",
-        "dev:be": "pnpm --filter backend dev",
-        "dev:fe": "pnpm --filter frontend dev",
-        "format": "pnpm -r --parallel format"
+        "be:dev": "pnpm --filter backend dev",
+        "be:add": "pnpm --filter backend add",
+        "be:test": "pnpm --filter backend test",
+        "fe:dev": "pnpm --filter frontend dev",
+        "fe:add": "pnpm --filter frontend add",
+        "format": "pnpm -r --parallel format",
+        "nest": "pnpm -F backend exec nest"
     },
     "keywords": [],
     "author": "",
