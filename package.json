@@ -1,0 +1,24 @@
+{
+    "name": "knowledge-ai",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "dev": "pnpm -r --parallel dev",
+        "dev:be": "pnpm --filter backend dev",
+        "dev:fe": "pnpm --filter frontend dev",
+        "format": "pnpm -r --parallel format"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devEngines": {
+        "packageManager": {
+            "name": "pnpm",
+            "version": "12.10.1",
+            "onFail": "download"
+        }
+    },
+    "packageManager": "pnpm@12.10.1",
+    "type": "module"
+}
