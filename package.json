@@ -11,7 +11,8 @@
         "fe:dev": "pnpm --filter frontend dev",
         "fe:add": "pnpm --filter frontend add",
         "format": "pnpm -r --parallel format",
-        "nest": "pnpm -F backend exec nest"
+        "nest": "pnpm -F backend exec nest",
+        "prisma": "pnpm -F backend exec prisma"
     },
     "keywords": [],
     "author": "",
