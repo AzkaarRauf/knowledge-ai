@@ -1,13 +1,23 @@
 import { ZodValidationPipe, ZodSerializerInterceptor, ZodSerializationException } from 'nestjs-zod'
 import { APP_PIPE, APP_INTERCEPTOR, APP_FILTER, BaseExceptionFilter } from '@nestjs/core'
 import { ZodError } from 'zod'
-import { Module, HttpException, ArgumentsHost, Logger, Catch } from '@nestjs/common'
+import {
+    Module,
+    HttpException,
+    ArgumentsHost,
+    Logger,
+    Catch,
+    NestModule,
+    MiddlewareConsumer,
+} from '@nestjs/common'
 import { AppController } from './app.controller.js'
 import { AppService } from './app.service.js'
 import { HealthModule } from './health/health.module.js'
 import { PrismaService } from './prisma/prisma.service.js'
 import { PrismaModule } from './prisma/prisma.module.js'
 import { UsersModule } from './users/users.module.js'
+import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware.js'
+import { LoggingInterceptor } from './interceptors/logging/logging.interceptor.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -44,6 +54,14 @@ class HttpExceptionFilter extends BaseExceptionFilter {
             provide: APP_FILTER,
             useClass: HttpExceptionFilter,
         },
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: LoggingInterceptor,
+        },
     ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(RequestIdMiddleware).forRoutes('*')
+    }
+}
