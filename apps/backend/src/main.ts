@@ -9,17 +9,6 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
 
-    const openApiDoc = SwaggerModule.createDocument(
-        app,
-        new DocumentBuilder()
-            .setTitle('Example API')
-            .setDescription('Example API description')
-            .setVersion('1.0')
-            .build(),
-    )
-
-    SwaggerModule.setup('api', app, cleanupOpenApiDoc(openApiDoc))
-
     app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' })
     app.setGlobalPrefix('api', {
         exclude: ['health'],
@@ -35,8 +24,8 @@ async function bootstrap() {
 
     // Swagger if dev env
     if (env.ENV === 'dev') {
-        const config = new DocumentBuilder().build()
-        const documentFactory = () => SwaggerModule.createDocument(app, config)
+        const config = new DocumentBuilder().addBearerAuth().build()
+        const documentFactory = () => cleanupOpenApiDoc(SwaggerModule.createDocument(app, config))
         SwaggerModule.setup('docs', app, documentFactory)
     }
 

@@ -12,7 +12,9 @@ import { uuidSchema } from 'src/common/schemas/uuid.schema.js'
 import { CreateUserDto } from './dto/create-user.dto.js'
 import { UpdateUserDto } from './dto/update-user.dto.js'
 import { UsersService } from './users.service.js'
+import { ApiBearerAuth } from '@nestjs/swagger'
 
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
