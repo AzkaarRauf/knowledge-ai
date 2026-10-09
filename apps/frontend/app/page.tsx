@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { HealthStatus } from '@/features/health/components/HealthStatus'
 
 export default function Home() {
   return (
@@ -64,6 +65,7 @@ export default function Home() {
           </a>
         </div>
       </main>
+      <HealthStatus />
     </div>
   )
 }
