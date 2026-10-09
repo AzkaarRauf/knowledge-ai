@@ -13,10 +13,81 @@ datasource db {
 }
 
 model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  email         String
+  password      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  department    Department     @relation(fields: [departmentId], references: [id])
+  departmentId  String         @db.Uuid
+  documents     Document[]
+  conversations Conversation[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Department {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
-  email     String
-  password  String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+model Document {
+  id             String          @id @default(uuid()) @db.Uuid
+  filename       String
+  fileHash       String          @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  documentChunks DocumentChunk[]
+  user           User            @relation(fields: [userId], references: [id])
+  userId         String          @db.Uuid
+  conversation   Conversation?   @relation(fields: [conversationId], references: [id])
+  conversationId String?         @db.Uuid
+}
+
+model DocumentChunk {
+  id         String                     @id @default(uuid()) @db.Uuid
+  document   Document                   @relation(fields: [documentId], references: [id])
+  content    String
+  embedding  Unsupported("vector(768)")
+  createdAt  DateTime                   @default(now())
+  updatedAt  DateTime                   @updatedAt
+  documentId String                     @db.Uuid
+
+  @@index([documentId])
+}
+
+model Conversation {
+  id        String     @id @default(uuid()) @db.Uuid
+  title     String     @default("New Chat")
+  user      User       @relation(fields: [userId], references: [id])
+  documents Document[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  userId    String     @db.Uuid
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+}
+
+model Messages {
+  id        String      @id @default(uuid()) @db.Uuid
+  content   String
+  role      MessageRole
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
