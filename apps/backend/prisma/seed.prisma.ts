@@ -5,6 +5,7 @@ import { UserCreateInput } from '../src/generated/prisma/models.js'
 import { HashingService } from '../src/hashing/hashing.service.js'
 
 const { SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD } = env
+const departments = ['HR', 'IT']
 
 await seed()
 async function seed() {
@@ -30,6 +31,9 @@ async function seed() {
             update: {},
             create: admin,
         })
+        for (const name of departments) {
+            await client.department.upsert({ where: { name }, update: {}, create: { name } })
+        }
     } finally {
         await client.$disconnect()
     }
