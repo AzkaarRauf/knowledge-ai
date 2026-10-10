@@ -10,6 +10,7 @@ const envSchema = z.object({
     DATABASE_URL: z.string().nonempty(),
     SEED_ADMIN_EMAIL: z.string().trim().pipe(z.email()).optional(),
     SEED_ADMIN_PASSWORD: passwordSchema.optional(),
+    JWT_SECRET: z.string().nonempty(),
 })
 
 export const env = envSchema.parse(process.env)

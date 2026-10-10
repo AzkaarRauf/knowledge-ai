@@ -1,25 +1,25 @@
-import { ZodValidationPipe, ZodSerializerInterceptor, ZodSerializationException } from 'nestjs-zod'
-import { APP_PIPE, APP_INTERCEPTOR, APP_FILTER, BaseExceptionFilter } from '@nestjs/core'
-import { ZodError } from 'zod'
 import {
-    Module,
-    HttpException,
     ArgumentsHost,
-    Logger,
     Catch,
-    NestModule,
+    HttpException,
+    Logger,
     MiddlewareConsumer,
+    Module,
+    NestModule,
 } from '@nestjs/common'
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, BaseExceptionFilter } from '@nestjs/core'
+import { ZodSerializationException, ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod'
+import { ZodError } from 'zod'
 import { AppController } from './app.controller.js'
 import { AppService } from './app.service.js'
-import { HealthModule } from './health/health.module.js'
-import { PrismaService } from './prisma/prisma.service.js'
-import { PrismaModule } from './prisma/prisma.module.js'
-import { UsersModule } from './users/users.module.js'
-import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware.js'
-import { LoggingInterceptor } from './interceptors/logging/logging.interceptor.js'
-import { EncryptionModule } from './encryption/encryption.module.js'
+import { AuthModule } from './auth/auth.module.js'
 import { HashingModule } from './hashing/hashing.module.js'
+import { HealthModule } from './health/health.module.js'
+import { LoggingInterceptor } from './interceptors/logging/logging.interceptor.js'
+import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware.js'
+import { PrismaModule } from './prisma/prisma.module.js'
+import { PrismaService } from './prisma/prisma.service.js'
+import { UsersModule } from './users/users.module.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -39,7 +39,7 @@ class HttpExceptionFilter extends BaseExceptionFilter {
 }
 
 @Module({
-    imports: [HealthModule, PrismaModule, UsersModule, EncryptionModule, HashingModule],
+    imports: [AuthModule, HealthModule, PrismaModule, UsersModule, HashingModule],
     controllers: [AppController],
     providers: [
         AppService,
