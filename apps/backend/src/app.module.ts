@@ -18,6 +18,8 @@ import { PrismaModule } from './prisma/prisma.module.js'
 import { UsersModule } from './users/users.module.js'
 import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware.js'
 import { LoggingInterceptor } from './interceptors/logging/logging.interceptor.js'
+import { EncryptionModule } from './encryption/encryption.module.js'
+import { HashingModule } from './hashing/hashing.module.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -37,7 +39,7 @@ class HttpExceptionFilter extends BaseExceptionFilter {
 }
 
 @Module({
-    imports: [HealthModule, PrismaModule, UsersModule],
+    imports: [HealthModule, PrismaModule, UsersModule, EncryptionModule, HashingModule],
     controllers: [AppController],
     providers: [
         AppService,

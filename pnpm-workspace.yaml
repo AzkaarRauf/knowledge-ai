@@ -4,6 +4,8 @@ packages:
 allowBuilds:
     '@prisma/engines': true
     '@scarf/scarf': true
+    bcrypt: true
+    esbuild: true
     prisma: true
     prisma-zod-generator: true
     sharp: false
