@@ -1,18 +1,9 @@
-import {
-    BadRequestException,
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    Patch,
-    Post,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { ApiBearerAuth } from '@nestjs/swagger'
 import { uuidSchema } from 'src/common/schemas/uuid.schema.js'
 import { CreateUserDto } from './dto/create-user.dto.js'
 import { UpdateUserDto } from './dto/update-user.dto.js'
 import { UsersService } from './users.service.js'
-import { ApiBearerAuth } from '@nestjs/swagger'
 
 @ApiBearerAuth()
 @Controller('users')

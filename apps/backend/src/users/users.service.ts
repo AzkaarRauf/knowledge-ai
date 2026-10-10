@@ -23,7 +23,7 @@ export class UsersService {
         return user
     }
 
-    update(id: number, updateUserDto: UpdateUserDto) {
+    update(id: number, _updateUserDto: UpdateUserDto) {
         return `This action updates a #${id} user`
     }
 

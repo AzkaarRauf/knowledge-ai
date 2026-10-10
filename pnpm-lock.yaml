@@ -164,7 +164,14 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      oxlint:
+        specifier: ^1.87.0
+        version: 1.87.0(oxlint-tsgolint@7.0.2003)
+      oxlint-tsgolint:
+        specifier: ^7.0.2003
+        version: 7.0.2003
 
   apps/backend:
     dependencies:
