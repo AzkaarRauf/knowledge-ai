@@ -10,7 +10,7 @@ pnpm monorepo:
 
 - Node.js 24+
 - pnpm 12 (`corepack enable`)
-- PostgreSQL database (local or [Neon](https://neon.tech))
+- [Neon](https://neon.tech) PostgreSQL database (local Postgres won't work: the backend uses the Neon serverless adapter)
 
 ## Setup
 
