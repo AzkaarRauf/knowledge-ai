@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthController } from './auth.controller.js'
+import { type Response } from 'express'
 import { AuthService } from './auth.service.js'
 
 const response = {
@@ -11,6 +12,8 @@ const response = {
     },
     token: 'signed-token',
 }
+
+const res = {} as Response
 
 describe('AuthController', () => {
     let controller: AuthController
@@ -37,20 +40,23 @@ describe('AuthController', () => {
             }
             authService.register.mockResolvedValue(response)
 
-            await expect(controller.register(registerUserDto)).resolves.toEqual(response)
-            expect(authService.register).toHaveBeenCalledWith(registerUserDto)
+            await expect(controller.register(registerUserDto, res)).resolves.toEqual(response)
+            expect(authService.register).toHaveBeenCalledWith(registerUserDto, res)
         })
 
         it('propagates errors from AuthService.register', async () => {
             authService.register.mockRejectedValue(new Error('boom'))
 
             await expect(
-                controller.register({
-                    name: 'Jane Doe',
-                    email: 'jane@example.com',
-                    password: 'Plain-password1!',
-                    departmentId: 'b5f0b6c2-4d2b-4a0e-8f43-7c1d1f0a2e33',
-                }),
+                controller.register(
+                    {
+                        name: 'Jane Doe',
+                        email: 'jane@example.com',
+                        password: 'Plain-password1!',
+                        departmentId: 'b5f0b6c2-4d2b-4a0e-8f43-7c1d1f0a2e33',
+                    },
+                    res,
+                ),
             ).rejects.toThrow('boom')
         })
     })
@@ -60,15 +66,15 @@ describe('AuthController', () => {
             const loginDto = { email: 'jane@example.com', password: 'Plain-password1!' }
             authService.login.mockResolvedValue(response)
 
-            await expect(controller.login(loginDto)).resolves.toEqual(response)
-            expect(authService.login).toHaveBeenCalledWith(loginDto)
+            await expect(controller.login(loginDto, res)).resolves.toEqual(response)
+            expect(authService.login).toHaveBeenCalledWith(loginDto, res)
         })
 
         it('propagates errors from AuthService.login', async () => {
             authService.login.mockRejectedValue(new Error('Invalid email or password'))
 
             await expect(
-                controller.login({ email: 'jane@example.com', password: 'wrong' }),
+                controller.login({ email: 'jane@example.com', password: 'wrong' }, res),
             ).rejects.toThrow('Invalid email or password')
         })
     })

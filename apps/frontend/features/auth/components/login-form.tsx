@@ -2,6 +2,7 @@
 
 import { revalidateLogic } from '@tanstack/react-form'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 import {
@@ -15,12 +16,14 @@ import {
 import { LoginRequestSchema } from '@/features/auth/auth.schema'
 import { useLoginMutation } from '@/features/auth/hooks/login-mutation.hook'
 import { useAppForm } from '@/hooks/useAppForm'
+import { HOME_ROUTE } from '@/lib/auth'
 import { ApiValidationError, getErrorMessage } from '@/lib/errors'
 import { isError, safe } from '@/lib/safe'
 
 type LoginFormInput = z.input<typeof LoginRequestSchema>
 
 export function LoginForm() {
+  const router = useRouter()
   const loginMutation = useLoginMutation()
 
   const form = useAppForm({
@@ -38,6 +41,7 @@ export function LoginForm() {
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
       if (isError(res)) return toast.error(getErrorMessage(res), { position: 'top-center' })
       toast.success(`Welcome back, ${res.user.name}`)
+      router.replace(HOME_ROUTE)
     },
   })
 
@@ -63,6 +67,7 @@ export function LoginForm() {
                 placeholder="you@company.com"
                 autoComplete="email"
                 autoFocus
+                data-1p-ignore
                 required
               />
             )}
@@ -73,6 +78,7 @@ export function LoginForm() {
                 label="Password"
                 type="password"
                 autoComplete="current-password"
+                data-1p-ignore
                 required
               />
             )}

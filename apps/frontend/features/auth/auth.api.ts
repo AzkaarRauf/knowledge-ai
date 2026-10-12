@@ -13,3 +13,7 @@ export async function register(body: RegisterRequest): Promise<RegisterResponse>
   const data = RegisterResponseSchema.parse(res.data)
   return data
 }
+
+export async function logout() {
+  await api.delete('/auth/logout')
+}

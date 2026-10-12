@@ -3,6 +3,7 @@
 import { revalidateLogic } from '@tanstack/react-form'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 import {
@@ -19,6 +20,7 @@ import { useRegisterMutation } from '@/features/auth/hooks/register-mutation.hoo
 import { publicDepartmentsQueryOptions } from '@/features/departments/api/queries'
 import type { PublicDepartment } from '@/features/departments/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
+import { HOME_ROUTE } from '@/lib/auth'
 import { ApiValidationError, getErrorMessage } from '@/lib/errors'
 import { isError, safe } from '@/lib/safe'
 
@@ -28,6 +30,7 @@ const toDepartmentOptions = (departments: PublicDepartment[]) =>
   departments.map((department) => ({ value: department.id, label: department.name }))
 
 export function RegisterForm() {
+  const router = useRouter()
   const registerMutation = useRegisterMutation()
   const { data: departmentOptions = [], isPending: departmentsPending } = useQuery({
     ...publicDepartmentsQueryOptions(),
@@ -49,6 +52,7 @@ export function RegisterForm() {
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
       if (isError(res)) return toast.error(getErrorMessage(res), { position: 'top-center' })
       toast.success(`Welcome, ${res.user.name}`)
+      router.replace(HOME_ROUTE)
     },
   })
 

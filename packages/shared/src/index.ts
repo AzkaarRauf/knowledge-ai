@@ -1,5 +1,6 @@
 export * from './schema/auth/login.schema.js'
 export * from './schema/auth/register.schema.js'
+export * from './schema/auth/refresh-token.schema.js'
 export * from './schema/common/password.schema.js'
 export * from './schema/common/date.schema.js'
 export * from './schema/departments/department.schema.js'
