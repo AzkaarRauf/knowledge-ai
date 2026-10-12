@@ -1,6 +1,6 @@
 import { loadEnvFile } from 'node:process'
 import z from 'zod'
-import { passwordSchema } from './common/schemas/password.schema.js'
+import { passwordSchema } from 'shared'
 
 loadEnvFile()
 

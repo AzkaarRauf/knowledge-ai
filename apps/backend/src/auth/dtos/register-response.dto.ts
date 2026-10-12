@@ -1,6 +1,4 @@
 import { createZodDto } from 'nestjs-zod'
-import { loginResponseSchema } from './login-response.dto.js'
-
-export const registerResponseSchema = loginResponseSchema
+import { registerResponseSchema } from 'shared'
 
 export class RegisterResponseDto extends createZodDto(registerResponseSchema) {}

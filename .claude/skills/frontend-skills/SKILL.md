@@ -26,6 +26,8 @@ All paths in the frontend-* skills are relative to `apps/frontend/` (Next.js App
 | any response/request shape; `schemas.ts`; `.catch`/`.nullable`/`.nullish`; paginated responses                                   | `frontend-zod-schemas`    |
 | reading server data, `useQuery`, `queryOptions`, query keys, `api/queries.ts`, the query provider                                | `frontend-query-hooks`    |
 | create/update/delete writes, `useMutation`, invalidation, `use*Mutation`                                                         | `frontend-mutation-hooks` |
+| any form, detail/edit page, `useAppForm`, `withForm`, edit-mode toggle, validators, submit handler                               | `frontend-forms`          |
+| picking/adding `TextField`/`TextareaField`/`CheckboxField`, copyable fields, `TextFieldView`, `components/form/`                 | `frontend-form-fields`    |
 | delete button, destructive action, success/error toasts                                                                          | `frontend-confirm-dialog` |
 | `isPending`/`isLoading` branch, skeleton, `loading.tsx`, `<Suspense>` fallback, anything waiting on data                         | `frontend-loading-states` |
 | new page or layout in `app/`, dynamic segment, `'use client'` boundary, links/navigation                                         | `frontend-routing`        |
@@ -37,15 +39,16 @@ All paths in the frontend-* skills are relative to `apps/frontend/` (Next.js App
 - Every response/request shape gets a zod schema that models every field the API sends. (`frontend-zod-schemas`)
 - Reads are `useQuery(xxxQueryOptions())`; no `useXxxQuery` wrappers. (`frontend-query-hooks`)
 - Every mutation invalidates the affected query keys. (`frontend-mutation-hooks`)
+- Forms use `useAppForm` from `@/hooks/useAppForm`; raw `useForm` is banned. (`frontend-forms`)
 - Destructive actions go through `<ConfirmationDialog>`. (`frontend-confirm-dialog`)
 - Query loading renders `<Skeleton>` placeholders; mutation progress text ("Sending...") is fine. (`frontend-loading-states`)
 - `page.tsx`/`layout.tsx` stay thin: they wire params to feature components. (`frontend-routing`)
 
 ## Build order (full feature, bottom-up)
 
-api-client → zod-schemas → query-hooks → mutation-hooks → confirm-dialog → loading-states → routing.
+api-client → zod-schemas → query-hooks → mutation-hooks → forms → form-fields → confirm-dialog → loading-states → routing.
 
 ## Exclusions
 
 - `standardize`: user-invoked audit, outside the build flow.
-- Forms and tables have no skill yet; build them plainly and flag it to the user.
+- Tables have no skill yet; build them plainly and flag it to the user.

@@ -13,6 +13,7 @@ import { ZodError } from 'zod'
 import { AppController } from './app.controller.js'
 import { AppService } from './app.service.js'
 import { AuthModule } from './auth/auth.module.js'
+import { DepartmentsModule } from './departments/departments.module.js'
 import { HashingModule } from './hashing/hashing.module.js'
 import { HealthModule } from './health/health.module.js'
 import { LoggingInterceptor } from './interceptors/logging/logging.interceptor.js'
@@ -39,7 +40,14 @@ class HttpExceptionFilter extends BaseExceptionFilter {
 }
 
 @Module({
-    imports: [AuthModule, HealthModule, PrismaModule, UsersModule, HashingModule],
+    imports: [
+        AuthModule,
+        DepartmentsModule,
+        HealthModule,
+        PrismaModule,
+        UsersModule,
+        HashingModule,
+    ],
     controllers: [AppController],
     providers: [
         AppService,

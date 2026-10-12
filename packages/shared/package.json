@@ -1,0 +1,28 @@
+{
+    "name": "shared",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "tsc --watch",
+        "build": "tsc",
+        "format": "prettier --write \"src/**/*.ts\""
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "private": true,
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "devDependencies": {
+        "prettier": "^3.9.10",
+        "typescript": "^7.0.2",
+        "zod": "^4.6.5"
+    },
+    "peerDependencies": {
+        "zod": "^4.6.5"
+    }
+}

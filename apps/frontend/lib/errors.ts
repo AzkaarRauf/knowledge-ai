@@ -1,3 +1,4 @@
+import type { AnyFormApi } from '@tanstack/react-form'
 import { isAxiosError } from 'axios'
 import { z } from 'zod'
 
@@ -18,6 +19,18 @@ export class ApiValidationError extends ApiError {
   ) {
     super(message, 400)
     this.name = 'ApiValidationError'
+  }
+
+  static check(value: unknown): value is ApiValidationError {
+    return value instanceof ApiValidationError
+  }
+
+  /**
+   * Shows each backend field message on the matching form field. Set as a form-level
+   * `onServer` error, so the form's next validation (any change) clears it.
+   */
+  applyToForm(formApi: AnyFormApi) {
+    formApi.setErrorMap({ onServer: { fields: this.fieldErrors } })
   }
 }
 

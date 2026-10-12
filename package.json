@@ -5,11 +5,9 @@
     "main": "index.js",
     "scripts": {
         "dev": "pnpm -r --parallel dev",
-        "be:dev": "pnpm --filter backend dev",
-        "be:add": "pnpm --filter backend add",
-        "be:test": "pnpm --filter backend test",
-        "fe:dev": "pnpm --filter frontend dev",
-        "fe:add": "pnpm --filter frontend add",
+        "be": "pnpm --filter backend",
+        "fe": "pnpm --filter frontend",
+        "shared": "pnpm --filter shared",
         "format": "pnpm -r --parallel format",
         "nest": "pnpm -F backend exec nest",
         "prisma": "pnpm -F backend exec prisma"

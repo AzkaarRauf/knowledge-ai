@@ -1,6 +1,6 @@
 import z from 'zod'
 import { createZodDto } from 'nestjs-zod'
-import { passwordSchema } from 'src/common/schemas/password.schema.js'
+import { passwordSchema } from 'shared'
 
 export const createUserSchema = z.object({
     name: z.string('Name is required').trim().nonempty('Name is required'),

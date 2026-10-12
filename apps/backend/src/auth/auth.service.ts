@@ -1,8 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { RegisterUserDto } from './dtos/register-user.dto.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { HashingService } from 'src/hashing/hashing.service.js'
-import { LoginDto } from './dtos/login.dto.js'
+import { LoginRequestDto } from './dtos/login.dto.js'
 import { LoginResponseDto } from './dtos/login-response.dto.js'
 import { JwtService } from '@nestjs/jwt'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
@@ -18,6 +18,9 @@ export class AuthService {
 
     async register(registerUserDto: RegisterUserDto): Promise<RegisterResponseDto> {
         const { password, ...dto } = registerUserDto
+        const existingUser = await this.db.user.findUnique({ where: { email: dto.email } })
+        if (existingUser) throw new ConflictException('Email is already registered')
+
         const hashedPassword = await this.hashingService.hash(password)
         const user = await this.db.user.create({
             data: { ...dto, password: hashedPassword },
@@ -35,7 +38,7 @@ export class AuthService {
         return response
     }
 
-    async login(loginDto: LoginDto): Promise<LoginResponseDto> {
+    async login(loginDto: LoginRequestDto): Promise<LoginResponseDto> {
         const user = await this.db.user.findFirst({
             where: { email: loginDto.email },
             include: { department: true },

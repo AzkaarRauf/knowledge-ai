@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common'
+import { ConflictException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { HashingService } from 'src/hashing/hashing.service.js'
@@ -16,7 +16,7 @@ const user = {
 
 describe('AuthService', () => {
     let service: AuthService
-    const db = { user: { create: vi.fn(), findFirst: vi.fn() } }
+    const db = { user: { create: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() } }
     const hashingService = { hash: vi.fn(), compare: vi.fn() }
     const jwtService = { signAsync: vi.fn() }
 
@@ -71,6 +71,16 @@ describe('AuthService', () => {
                 'Unique constraint failed',
             )
             expect(jwtService.signAsync).not.toHaveBeenCalled()
+        })
+
+        it('throws ConflictException when the email is already registered', async () => {
+            db.user.findUnique.mockResolvedValue(user)
+
+            await expect(service.register({ ...registerUserDto })).rejects.toThrow(
+                new ConflictException('Email is already registered'),
+            )
+            expect(db.user.findUnique).toHaveBeenCalledWith({ where: { email: user.email } })
+            expect(db.user.create).not.toHaveBeenCalled()
         })
     })
 
