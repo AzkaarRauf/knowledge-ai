@@ -1,29 +1,29 @@
 import {
-    Body,
     Controller,
     Delete,
     FileTypeValidator,
     Get,
+    HttpCode,
     HttpStatus,
     MaxFileSizeValidator,
     Param,
     ParseFilePipe,
-    Patch,
+    ParseUUIDPipe,
     Post,
     Res,
     UploadedFile,
     UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse } from '@nestjs/swagger'
 import { DocumentsService } from './documents.service.js'
-import { CreateDocumentDto } from './dto/create-document.dto.js'
-import { UpdateDocumentDto } from './dto/update-document.dto.js'
 import { UploadDocumentDto } from './dto/upload-document.dto.js'
+import { DocumentResponseDto } from './dto/document-response.dto.js'
 import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
 import { ZodResponse } from 'nestjs-zod'
 import { type Response } from 'express'
+import { DOCUMENT_MAX_SIZE, DOCUMENT_MIME_TYPES } from 'shared'
 
 @ApiBearerAuth()
 @Controller('documents')
@@ -34,15 +34,17 @@ export class DocumentsController {
     @UseInterceptors(FileInterceptor('file'))
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: UploadDocumentDto })
+    @ZodResponse({ type: DocumentResponseDto, status: 201, description: 'Document uploaded' })
+    @ApiOkResponse({ type: DocumentResponseDto, description: 'Same file already uploaded' })
     async upload(
         @UploadedFile(
             new ParseFilePipe({
                 validators: [
-                    new MaxFileSizeValidator({ maxSize: 25 * 1024 * 1024 }), // 25mb
+                    new MaxFileSizeValidator({ maxSize: DOCUMENT_MAX_SIZE }),
                     new FileTypeValidator({
-                        // pdf, plain text, docx
-                        fileType:
-                            /^(application\/pdf|text\/plain|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/,
+                        fileType: new RegExp(
+                            `^(${DOCUMENT_MIME_TYPES.map((t) => t.replaceAll('.', '\\.')).join('|')})$`,
+                        ),
                         // txt has no magic number, so fall back to the client mimetype
                         fallbackToMimetype: true,
                         errorMessage: 'Allowed file formats: PDF, DOCX, TEXT',
@@ -59,28 +61,21 @@ export class DocumentsController {
         return document
     }
 
-    @Post()
-    create(@Body() createDocumentDto: CreateDocumentDto) {
-        return this.documentsService.create(createDocumentDto)
-    }
-
     @Get()
-    findAll() {
-        return this.documentsService.findAll()
+    @ZodResponse({ type: [DocumentResponseDto], status: 200 })
+    findAll(@JwtPayload() { userId }: JwtPayloadDto) {
+        return this.documentsService.findAll(userId)
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.documentsService.findOne(+id)
-    }
-
-    @Patch(':id')
-    update(@Param('id') id: string, @Body() updateDocumentDto: UpdateDocumentDto) {
-        return this.documentsService.update(+id, updateDocumentDto)
+    @ZodResponse({ type: DocumentResponseDto, status: 200 })
+    findOne(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
+        return this.documentsService.findOne(id, userId)
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.documentsService.remove(+id)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    remove(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
+        return this.documentsService.remove(id, userId)
     }
 }

@@ -1,6 +1,4 @@
 import { createZodDto } from 'nestjs-zod'
-import z from 'zod'
+import { uploadDocumentRequestSchema } from 'shared'
 
-const uploadDocumentSchema = z.object({ file: z.file() })
-
-export class UploadDocumentDto extends createZodDto(uploadDocumentSchema) {}
+export class UploadDocumentDto extends createZodDto(uploadDocumentRequestSchema) {}

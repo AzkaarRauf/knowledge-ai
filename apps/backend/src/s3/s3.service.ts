@@ -16,32 +16,26 @@ type GenerateKeyParams = {
     | { scope: 'conversation'; conversationId: string }
 )
 
-declare const brand: unique symbol
-
-type Brand<T, TBrand> = T & { [brand]: TBrand }
-
-type Key = Brand<string, 'Key'>
-
 @Injectable()
 export class S3Service {
     private readonly s3 = new S3Client({ forcePathStyle: true })
     private readonly bucket = env.S3_BUCKET
 
-    generateKey({ originalName, scope, conversationId }: GenerateKeyParams): Key {
+    generateKey({ originalName, scope, conversationId }: GenerateKeyParams): string {
         const idx = originalName.lastIndexOf('.')
         const filename = `${originalName.slice(0, idx)}-${randomUUID()}${originalName.slice(idx)}`
         if (scope === 'conversation') {
-            return `${scope}/${conversationId}/${filename}` as Key
+            return `${scope}/${conversationId}/${filename}`
         }
-        return `${scope}/${filename}` as Key
+        return `${scope}/${filename}`
     }
 
-    async upload(args: GenerateKeyParams & { buffer: Buffer; key?: Key }) {
+    async upload(args: GenerateKeyParams & { buffer: Buffer; key?: string }) {
         const Key = args.key || this.generateKey(args)
         await this.s3.send(new PutObjectCommand({ Bucket: this.bucket, Key, Body: args.buffer }))
     }
 
-    async delete(key: Key) {
+    async delete(key: string) {
         await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
     }
 }

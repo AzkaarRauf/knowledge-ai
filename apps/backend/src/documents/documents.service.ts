@@ -4,13 +4,11 @@ import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
 import { DocumentLoader } from '@langchain/core/document_loaders/base'
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai'
 import { CharacterTextSplitter } from '@langchain/textsplitters'
-import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { createHash, randomUUID } from 'node:crypto'
 import { join, sql } from 'src/generated/prisma/internal/prismaNamespace.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { S3Service } from 'src/s3/s3.service.js'
-import { CreateDocumentDto } from './dto/create-document.dto.js'
-import { UpdateDocumentDto } from './dto/update-document.dto.js'
 import { Document } from 'src/generated/prisma/client.js'
 import { isError, safe } from 'shared'
 
@@ -28,8 +26,10 @@ export class DocumentsService {
         isNew: boolean
     }> {
         const fileHash = createHash('sha256').update(file.buffer).digest('hex')
-        const existingDocument = await this.db.document.findFirst({ where: { fileHash } })
-        if (existingDocument) return { document: existingDocument, isNew: false }
+        const existingDocument = await this.db.document.findFirst({ where: { fileHash, userId } })
+        if (existingDocument) {
+            return { document: existingDocument, isNew: false }
+        }
 
         const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype })
         let loader: DocumentLoader
@@ -113,23 +113,23 @@ export class DocumentsService {
         }
     }
 
-    create(createDocumentDto: CreateDocumentDto) {
-        return 'This action adds a new document'
+    findAll(userId: string): Promise<Document[]> {
+        return this.db.document.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } })
     }
 
-    findAll() {
-        return `This action returns all documents`
+    // throws P2025 (404) if document is missing or not owned by user
+    findOne(id: string, userId: string): Promise<Document> {
+        return this.db.document.findUniqueOrThrow({ where: { id, userId } })
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} document`
-    }
+    async remove(id: string, userId: string) {
+        // delete chunks then document in one tx; throws P2025 (404) if document is missing or not owned by user
+        const document = await this.db.$transaction(async (tx) => {
+            await tx.documentChunk.deleteMany({ where: { documentId: id, document: { userId } } })
+            return tx.document.delete({ where: { id, userId } })
+        })
 
-    update(id: number, updateDocumentDto: UpdateDocumentDto) {
-        return `This action updates a #${id} document`
-    }
-
-    remove(id: number) {
-        return `This action removes a #${id} document`
+        // db is source of truth, so a failed s3 delete only leaves an orphan file
+        await this.s3Service.delete(document.s3key).catch((e) => this.logger.error(e))
     }
 }
