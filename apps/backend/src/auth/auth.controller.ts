@@ -19,7 +19,9 @@ import { LoginResponseDto } from './dtos/login-response.dto.js'
 import { RegisterResponseDto } from './dtos/register-response.dto.js'
 import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
 import { type Response, type Request } from 'express'
+import { SkipAuth } from 'src/decorators/skip-auth/skip-auth.decorator.js'
 
+@SkipAuth()
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}

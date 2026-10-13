@@ -22,7 +22,7 @@ import type { PublicDepartment } from '@/features/departments/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
 import { HOME_ROUTE } from '@/lib/auth'
 import { ApiValidationError, getErrorMessage } from '@/lib/errors'
-import { isError, safe } from '@/lib/safe'
+import { isError, safe } from 'shared'
 
 type RegisterFormInput = z.input<typeof RegisterRequestSchema>
 

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useLogoutMutation } from '@/features/auth/hooks/logout-mutation.hook'
 import { getErrorMessage } from '@/lib/errors'
-import { isError, safe } from '@/lib/safe'
+import { isError, safe } from 'shared'
 
 export function LogoutButton() {
   const logoutMutation = useLogoutMutation()

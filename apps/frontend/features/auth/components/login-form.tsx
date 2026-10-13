@@ -18,7 +18,7 @@ import { useLoginMutation } from '@/features/auth/hooks/login-mutation.hook'
 import { useAppForm } from '@/hooks/useAppForm'
 import { HOME_ROUTE } from '@/lib/auth'
 import { ApiValidationError, getErrorMessage } from '@/lib/errors'
-import { isError, safe } from '@/lib/safe'
+import { isError, safe } from 'shared'
 
 type LoginFormInput = z.input<typeof LoginRequestSchema>
 

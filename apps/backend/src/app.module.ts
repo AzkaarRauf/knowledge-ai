@@ -7,7 +7,7 @@ import {
     Module,
     NestModule,
 } from '@nestjs/common'
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, BaseExceptionFilter } from '@nestjs/core'
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE, BaseExceptionFilter } from '@nestjs/core'
 import { ZodSerializationException, ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod'
 import { ZodError } from 'zod'
 import { AppController } from './app.controller.js'
@@ -21,6 +21,9 @@ import { RequestIdMiddleware } from './middlewares/request-id/request-id.middlew
 import { PrismaModule } from './prisma/prisma.module.js'
 import { PrismaService } from './prisma/prisma.service.js'
 import { UsersModule } from './users/users.module.js'
+import { DocumentsModule } from './documents/documents.module.js'
+import { S3Module } from './s3/s3.module.js'
+import { AuthGuard } from './auth/auth.guard.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -47,6 +50,8 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         PrismaModule,
         UsersModule,
         HashingModule,
+        DocumentsModule,
+        S3Module,
     ],
     controllers: [AppController],
     providers: [
@@ -67,6 +72,10 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         {
             provide: APP_INTERCEPTOR,
             useClass: LoggingInterceptor,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: AuthGuard,
         },
     ],
 })

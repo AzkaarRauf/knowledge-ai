@@ -1,0 +1,46 @@
+import { Injectable } from '@nestjs/common'
+import {
+    S3Client,
+    PutObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand,
+} from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { randomUUID } from 'node:crypto'
+
+type GenerateKeyParams = {
+    originalName: string
+} & (
+    | { scope: 'admin'; conversationId?: undefined }
+    | { scope: 'conversation'; conversationId: string }
+)
+
+declare const brand: unique symbol
+
+type Brand<T, TBrand> = T & { [brand]: TBrand }
+
+type Key = Brand<string, 'Key'>
+
+@Injectable()
+export class S3Service {
+    private readonly s3 = new S3Client({ forcePathStyle: true })
+    private readonly bucket = 'documents'
+
+    generateKey({ originalName, scope, conversationId }: GenerateKeyParams): Key {
+        const idx = originalName.lastIndexOf('.')
+        const filename = `${originalName.slice(0, idx)}-${randomUUID()}${originalName.slice(idx)}`
+        if (scope === 'conversation') {
+            return `${scope}/${conversationId}/${filename}` as Key
+        }
+        return `${scope}/${filename}` as Key
+    }
+
+    async upload(args: GenerateKeyParams & { buffer: Buffer; key?: Key }) {
+        const Key = args.key || this.generateKey(args)
+        await this.s3.send(new PutObjectCommand({ Bucket: this.bucket, Key, Body: args.buffer }))
+    }
+
+    async delete(key: Key) {
+        await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
+    }
+}
