@@ -11,6 +11,12 @@ const envSchema = z.object({
     SEED_ADMIN_EMAIL: z.string().trim().pipe(z.email()).optional(),
     SEED_ADMIN_PASSWORD: passwordSchema.optional(),
     JWT_SECRET: z.string().nonempty(),
+    GOOGLE_API_KEY: z.string().nonempty(),
+    AWS_ENDPOINT_URL_S3: z.url(),
+    AWS_ACCESS_KEY_ID: z.string().nonempty(),
+    AWS_SECRET_ACCESS_KEY: z.string().nonempty(),
+    AWS_REGION: z.string().nonempty(),
+    S3_BUCKET: z.string().nonempty(),
 })
 
 export const env = envSchema.parse(process.env)
