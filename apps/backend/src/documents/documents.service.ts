@@ -9,8 +9,9 @@ import { createHash, randomUUID } from 'node:crypto'
 import { join, sql } from 'src/generated/prisma/internal/prismaNamespace.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { S3Service } from 'src/s3/s3.service.js'
-import { Document } from 'src/generated/prisma/client.js'
-import { isError, safe } from 'shared'
+import { Document, Prisma } from 'src/generated/prisma/client.js'
+import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
+import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
 
 @Injectable()
 export class DocumentsService {
@@ -113,8 +114,25 @@ export class DocumentsService {
         }
     }
 
-    findAll(userId: string): Promise<Document[]> {
-        return this.db.document.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } })
+    async findAll(userId: string, query: ListDocumentsQuery): Promise<Paginated<Document>> {
+        const { search, sortBy, sortOrder, conversationId, createdFrom, createdTo } = query
+        const where: Prisma.DocumentWhereInput = {
+            userId,
+            conversationId,
+            ...(search && { filename: { contains: search, mode: 'insensitive' } }),
+            ...((createdFrom || createdTo) && { createdAt: { gte: createdFrom, lte: createdTo } }),
+        }
+
+        const [data, total] = await this.db.$transaction([
+            this.db.document.findMany({
+                where,
+                // id as tie-breaker so pages stay stable when sort values repeat
+                orderBy: [{ [sortBy]: sortOrder }, { id: 'asc' }],
+                ...toPrismaPagination(query),
+            }),
+            this.db.document.count({ where }),
+        ])
+        return { meta: buildPaginationMeta(query, total), data }
     }
 
     // throws P2025 (404) if document is missing or not owned by user

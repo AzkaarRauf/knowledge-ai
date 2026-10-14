@@ -1,5 +1,6 @@
-import { documentSchema, uploadDocumentRequestSchema } from 'shared'
+import { documentSchema, listDocumentsQuerySchema, uploadDocumentRequestSchema } from 'shared'
 import { z } from 'zod'
+import { paginatedSchema } from '@/lib/schemas'
 
 export const DocumentSchema = z.object({
   id: z.string().catch(''),
@@ -10,6 +11,12 @@ export const DocumentSchema = z.object({
 }) satisfies z.ZodType<z.input<typeof documentSchema>>
 export type Document = z.infer<typeof DocumentSchema>
 
-export const DocumentListSchema = z.array(DocumentSchema).catch([])
+export const PaginatedDocumentsSchema = paginatedSchema(DocumentSchema)
+export type PaginatedDocuments = z.infer<typeof PaginatedDocumentsSchema>
+
+export const ListDocumentsRequestSchema = listDocumentsQuerySchema
+/** What callers pass: every field optional, defaults filled in on parse. */
+export type ListDocumentsParams = z.input<typeof ListDocumentsRequestSchema>
+export type ListDocumentsQuery = z.output<typeof ListDocumentsRequestSchema>
 
 export const UploadDocumentRequestSchema = uploadDocumentRequestSchema

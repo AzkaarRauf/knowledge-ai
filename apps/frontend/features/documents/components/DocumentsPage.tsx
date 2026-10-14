@@ -1,4 +1,5 @@
-import { DocumentList } from '@/features/documents/components/DocumentList'
+import { Suspense } from 'react'
+import { DocumentList, DocumentListSkeleton } from '@/features/documents/components/DocumentList'
 import { DocumentUploadButton } from '@/features/documents/components/DocumentUploadButton'
 
 export function DocumentsPage() {
@@ -11,7 +12,10 @@ export function DocumentsPage() {
         </div>
         <DocumentUploadButton />
       </div>
-      <DocumentList />
+      {/* DocumentList reads URL search params, which needs a Suspense boundary */}
+      <Suspense fallback={<DocumentListSkeleton />}>
+        <DocumentList />
+      </Suspense>
     </div>
   )
 }

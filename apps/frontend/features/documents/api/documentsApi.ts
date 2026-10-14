@@ -1,14 +1,17 @@
 import { api } from '@/lib/api-client'
 import {
-  DocumentListSchema,
   DocumentSchema,
+  type ListDocumentsParams,
+  ListDocumentsRequestSchema,
+  PaginatedDocumentsSchema,
   UploadDocumentRequestSchema,
 } from '@/features/documents/schemas'
 import { type UploadDocumentRequest } from 'shared'
 
-export async function getDocuments() {
-  const res = await api.get('/documents')
-  return DocumentListSchema.parse(res.data)
+export async function getDocuments(params: ListDocumentsParams = {}) {
+  // axios sends Date params as ISO strings
+  const res = await api.get('/documents', { params: ListDocumentsRequestSchema.parse(params) })
+  return PaginatedDocumentsSchema.parse(res.data)
 }
 
 export async function uploadDocument(request: UploadDocumentRequest) {

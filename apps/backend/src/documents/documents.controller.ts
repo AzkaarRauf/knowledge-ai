@@ -10,6 +10,7 @@ import {
     ParseFilePipe,
     ParseUUIDPipe,
     Post,
+    Query,
     Res,
     UploadedFile,
     UseInterceptors,
@@ -19,6 +20,8 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse } from '@nestjs/swag
 import { DocumentsService } from './documents.service.js'
 import { UploadDocumentDto } from './dto/upload-document.dto.js'
 import { DocumentResponseDto } from './dto/document-response.dto.js'
+import { ListDocumentsQueryDto } from './dto/list-documents-query.dto.js'
+import { PaginatedDocumentsResponseDto } from './dto/paginated-documents-response.dto.js'
 import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
 import { ZodResponse } from 'nestjs-zod'
@@ -62,9 +65,9 @@ export class DocumentsController {
     }
 
     @Get()
-    @ZodResponse({ type: [DocumentResponseDto], status: 200 })
-    findAll(@JwtPayload() { userId }: JwtPayloadDto) {
-        return this.documentsService.findAll(userId)
+    @ZodResponse({ type: PaginatedDocumentsResponseDto, status: 200 })
+    findAll(@JwtPayload() { userId }: JwtPayloadDto, @Query() query: ListDocumentsQueryDto) {
+        return this.documentsService.findAll(userId, query)
     }
 
     @Get(':id')
@@ -74,7 +77,6 @@ export class DocumentsController {
     }
 
     @Delete(':id')
-    @HttpCode(HttpStatus.NO_CONTENT)
     remove(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
         return this.documentsService.remove(id, userId)
     }

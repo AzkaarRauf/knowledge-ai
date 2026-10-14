@@ -39,7 +39,13 @@ export type User = z.infer<typeof UserSchema>
 
 ### Paginated responses
 
-The backend has no pagination helper yet. When one lands, build a shared `paginatedSchema(itemSchema)` factory in `lib/schemas.ts` mirroring its envelope, normalise the item array to `[]` so callers never null-check it, and update this section.
+Paginated list endpoints return `{ meta: { page, pageSize, total, totalPages }, data: T[] }`. Wrap the item schema with `paginatedSchema` from `@/lib/schemas`; it already applies `.catch` to `meta` and makes `data` fall back to `[]`.
+
+```ts
+export const PaginatedDocumentsSchema = paginatedSchema(DocumentSchema)
+```
+
+The list query params (`page`, `pageSize`, `search`, `sortBy`, `sortOrder`, plus filters) come from the feature's shared `list<Thing>QuerySchema` in `packages/shared`. Use it as the request schema and pass it as axios `params`. Callers pass `z.input<...>` (every field optional). Always parse the raw caller params. Shared date filters are codecs (ISO string in, `Date` out), so parsing output that was already parsed fails. See `features/documents/` for the pattern.
 
 ## Request schemas
 
