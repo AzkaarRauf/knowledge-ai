@@ -2,16 +2,10 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
-import {
-  type ListDocumentsParams,
-  type ListDocumentsQuery,
-  ListDocumentsRequestSchema,
-} from '@/features/documents/schemas'
+import { type ListDocumentsParams, type ListDocumentsQuery, ListDocumentsRequestSchema } from '@/features/documents/schemas'
 
 /** `undefined` or `''` removes the key from the URL. */
-export type DocumentListParamUpdates = Partial<
-  Record<keyof ListDocumentsQuery, string | number | undefined>
->
+export type DocumentListParamUpdates = Partial<Record<keyof ListDocumentsQuery, string | number | undefined>>
 
 /** List params live in the URL query string, so a page can be shared and survives refresh. */
 export function useDocumentListParams() {

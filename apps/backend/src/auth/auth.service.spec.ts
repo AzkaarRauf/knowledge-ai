@@ -54,10 +54,7 @@ describe('AuthService', () => {
             hashingService.hash.mockResolvedValue('hashed-password')
             db.user.create.mockResolvedValue(user)
 
-            const result = await service.register(
-                { ...registerUserDto },
-                res as unknown as Response,
-            )
+            const result = await service.register({ ...registerUserDto }, res as unknown as Response)
 
             expect(hashingService.hash).toHaveBeenCalledWith('Plain-password1!')
             expect(db.user.create).toHaveBeenCalledWith({
@@ -70,11 +67,7 @@ describe('AuthService', () => {
                 userId: user.id,
             })
             expect(db.refreshToken.create).toHaveBeenCalledWith({ data: { userId: user.id } })
-            expect(res.cookie).toHaveBeenCalledWith(
-                'refreshToken',
-                'refresh-token',
-                expect.objectContaining({ httpOnly: true }),
-            )
+            expect(res.cookie).toHaveBeenCalledWith('refreshToken', 'refresh-token', expect.objectContaining({ httpOnly: true }))
             expect(result).toEqual({ user, token: 'signed-token' })
         })
 
@@ -82,18 +75,18 @@ describe('AuthService', () => {
             hashingService.hash.mockResolvedValue('hashed-password')
             db.user.create.mockRejectedValue(new Error('Unique constraint failed'))
 
-            await expect(
-                service.register({ ...registerUserDto }, res as unknown as Response),
-            ).rejects.toThrow('Unique constraint failed')
+            await expect(service.register({ ...registerUserDto }, res as unknown as Response)).rejects.toThrow(
+                'Unique constraint failed',
+            )
             expect(jwtService.signAsync).not.toHaveBeenCalled()
         })
 
         it('throws ConflictException when the email is already registered', async () => {
             db.user.findUnique.mockResolvedValue(user)
 
-            await expect(
-                service.register({ ...registerUserDto }, res as unknown as Response),
-            ).rejects.toThrow(new ConflictException('Email is already registered'))
+            await expect(service.register({ ...registerUserDto }, res as unknown as Response)).rejects.toThrow(
+                new ConflictException('Email is already registered'),
+            )
             expect(db.user.findUnique).toHaveBeenCalledWith({ where: { email: user.email } })
             expect(db.user.create).not.toHaveBeenCalled()
         })
@@ -122,11 +115,7 @@ describe('AuthService', () => {
                 userId: user.id,
             })
             expect(db.refreshToken.create).toHaveBeenCalledWith({ data: { userId: user.id } })
-            expect(res.cookie).toHaveBeenCalledWith(
-                'refreshToken',
-                'refresh-token',
-                expect.objectContaining({ httpOnly: true }),
-            )
+            expect(res.cookie).toHaveBeenCalledWith('refreshToken', 'refresh-token', expect.objectContaining({ httpOnly: true }))
             expect(result).toEqual({ user, token: 'signed-token' })
         })
 

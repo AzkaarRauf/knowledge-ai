@@ -66,9 +66,7 @@ describe('DepartmentsService', () => {
         it('returns id and name only, without the admin department', async () => {
             db.department.findMany.mockResolvedValue([{ id: department.id, name: department.name }])
 
-            await expect(service.findAllPublic()).resolves.toEqual([
-                { id: department.id, name: department.name },
-            ])
+            await expect(service.findAllPublic()).resolves.toEqual([{ id: department.id, name: department.name }])
             expect(db.department.findMany).toHaveBeenCalledWith({
                 where: { name: { not: 'Admin' } },
                 select: { id: true, name: true },
@@ -93,9 +91,7 @@ describe('DepartmentsService', () => {
             db.department.findUnique.mockResolvedValue(department)
             db.department.update.mockResolvedValue(department)
 
-            await expect(service.update(department.id, { name: 'Engineering' })).resolves.toEqual(
-                department,
-            )
+            await expect(service.update(department.id, { name: 'Engineering' })).resolves.toEqual(department)
             expect(db.department.update).toHaveBeenCalledWith({
                 where: { id: department.id },
                 data: { name: 'Engineering' },

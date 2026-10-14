@@ -6,14 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type { z } from 'zod'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RegisterRequestSchema } from '@/features/auth/auth.schema'
 import { useRegisterMutation } from '@/features/auth/hooks/register-mutation.hook'
@@ -70,19 +63,9 @@ export function RegisterForm() {
 
       <form onSubmit={handleFormSubmit} noValidate className="grid gap-4">
         <CardContent className="grid gap-4">
-          <form.AppField name="name">
-            {(f) => <f.TextField label="Name" autoComplete="name" autoFocus required />}
-          </form.AppField>
+          <form.AppField name="name">{(f) => <f.TextField label="Name" autoComplete="name" autoFocus required />}</form.AppField>
           <form.AppField name="email">
-            {(f) => (
-              <f.TextField
-                label="Email"
-                type="email"
-                placeholder="you@company.com"
-                autoComplete="email"
-                required
-              />
-            )}
+            {(f) => <f.TextField label="Email" type="email" placeholder="you@company.com" autoComplete="email" required />}
           </form.AppField>
           <form.AppField name="password">
             {(f) => (
@@ -100,12 +83,7 @@ export function RegisterForm() {
           ) : (
             <form.AppField name="departmentId">
               {(f) => (
-                <f.SelectField
-                  label="Department"
-                  options={departmentOptions}
-                  placeholder="Select your department"
-                  required
-                />
+                <f.SelectField label="Department" options={departmentOptions} placeholder="Select your department" required />
               )}
             </form.AppField>
           )}
@@ -113,11 +91,7 @@ export function RegisterForm() {
 
         <CardFooter className="flex-col gap-3">
           <form.AppForm>
-            <form.SubscribeButton
-              label="Create account"
-              submittingLabel="Creating account..."
-              className="w-full"
-            />
+            <form.SubscribeButton label="Create account" submittingLabel="Creating account..." className="w-full" />
           </form.AppForm>
           <p className="text-sm text-muted-foreground">
             Already have an account?{' '}

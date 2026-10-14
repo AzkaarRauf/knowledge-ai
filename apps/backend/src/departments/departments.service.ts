@@ -33,10 +33,7 @@ export class DepartmentsService {
         return this.db.department.findUniqueOrThrow({ where: { id } })
     }
 
-    async update(
-        id: string,
-        updateDepartmentDto: UpdateDepartmentDto,
-    ): Promise<DepartmentResponseDto> {
+    async update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<DepartmentResponseDto> {
         if (updateDepartmentDto.name) await this.assertNameAvailable(updateDepartmentDto.name, id)
         return this.db.department.update({ where: { id }, data: updateDepartmentDto })
     }

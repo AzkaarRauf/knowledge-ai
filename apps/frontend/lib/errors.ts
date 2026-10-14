@@ -53,14 +53,11 @@ export function handleErrorResponse(error: unknown): never {
   const body = ErrorBodySchema.safeParse(error.response?.data)
   const rawMessage = body.success ? body.data.message : ''
   const message =
-    (Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage) ||
-    (status ? `Request failed (${status})` : 'Network error')
+    (Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage) || (status ? `Request failed (${status})` : 'Network error')
 
   // Nest StandardSchemaValidationPipe: { statusCode: 400, message, errors: [{ path, message }] }
   if (status === 400 && body.success && body.data.errors) {
-    const fieldErrors = Object.fromEntries(
-      body.data.errors.map((issue) => [issue.path.join('.'), issue.message]),
-    )
+    const fieldErrors = Object.fromEntries(body.data.errors.map((issue) => [issue.path.join('.'), issue.message]))
     throw new ApiValidationError(message, fieldErrors)
   }
 

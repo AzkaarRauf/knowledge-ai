@@ -26,11 +26,7 @@ export const uploadDocumentRequestSchema = z.object({
 })
 export type UploadDocumentRequest = z.infer<typeof uploadDocumentRequestSchema>
 
-export const DOCUMENT_SORT_FIELDS = [
-    'filename',
-    'createdAt',
-    'updatedAt',
-] as const satisfies (keyof Document)[]
+export const DOCUMENT_SORT_FIELDS = ['filename', 'createdAt', 'updatedAt'] as const satisfies (keyof Document)[]
 
 export const listDocumentsQuerySchema = listQuerySchema({
     sortFields: DOCUMENT_SORT_FIELDS,

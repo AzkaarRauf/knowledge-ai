@@ -38,10 +38,7 @@ export class DepartmentsController {
 
     @Patch(':id')
     @ZodResponse({ type: DepartmentResponseDto, status: 200 })
-    update(
-        @Param('id', { schema: uuidSchema }) id: string,
-        @Body() updateDepartmentDto: UpdateDepartmentDto,
-    ) {
+    update(@Param('id', { schema: uuidSchema }) id: string, @Body() updateDepartmentDto: UpdateDepartmentDto) {
         return this.departmentsService.update(id, updateDepartmentDto)
     }
 

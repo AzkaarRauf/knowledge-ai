@@ -45,9 +45,7 @@ export class DocumentsController {
                 validators: [
                     new MaxFileSizeValidator({ maxSize: DOCUMENT_MAX_SIZE }),
                     new FileTypeValidator({
-                        fileType: new RegExp(
-                            `^(${DOCUMENT_MIME_TYPES.map((t) => t.replaceAll('.', '\\.')).join('|')})$`,
-                        ),
+                        fileType: new RegExp(`^(${DOCUMENT_MIME_TYPES.map((t) => t.replaceAll('.', '\\.')).join('|')})$`),
                         // txt has no magic number, so fall back to the client mimetype
                         fallbackToMimetype: true,
                         errorMessage: 'Allowed file formats: PDF, DOCX, TEXT',

@@ -16,13 +16,7 @@ type TextareaFieldProps = {
   className?: string
 }
 
-export function TextareaField({
-  label,
-  required,
-  className,
-  rows = 3,
-  ...textareaProps
-}: TextareaFieldProps) {
+export function TextareaField({ label, required, className, rows = 3, ...textareaProps }: TextareaFieldProps) {
   const field = useFieldContext<string>()
   const id = useId()
   const error = formatFieldErrors(field.state.meta.errors)

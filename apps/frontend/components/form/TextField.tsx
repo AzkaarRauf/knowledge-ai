@@ -6,12 +6,7 @@ import { useId, useState, type HTMLInputTypeAttribute, type ReactNode } from 're
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from '@/components/ui/input-group'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { useFieldContext } from '@/hooks/form-context'
 import { cn } from '@/lib/utils'
 import { FieldShell } from './FieldShell'
@@ -97,14 +92,7 @@ export function TextInputView({
   }
 
   return (
-    <FieldShell
-      id={id}
-      label={label}
-      required={required}
-      error={error}
-      description={description}
-      className={className}
-    >
+    <FieldShell id={id} label={label} required={required} error={error} description={description} className={className}>
       <div className="flex gap-2">
         {type === 'password' ? (
           <InputGroup className="h-9">

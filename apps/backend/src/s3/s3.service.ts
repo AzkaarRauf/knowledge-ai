@@ -1,20 +1,12 @@
 import { Injectable } from '@nestjs/common'
-import {
-    S3Client,
-    PutObjectCommand,
-    GetObjectCommand,
-    DeleteObjectCommand,
-} from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'node:crypto'
 import { env } from 'src/env.js'
 
 type GenerateKeyParams = {
     originalName: string
-} & (
-    | { scope: 'admin'; conversationId?: undefined }
-    | { scope: 'conversation'; conversationId: string }
-)
+} & ({ scope: 'admin'; conversationId?: undefined } | { scope: 'conversation'; conversationId: string })
 
 @Injectable()
 export class S3Service {

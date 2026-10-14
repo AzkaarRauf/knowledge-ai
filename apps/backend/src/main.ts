@@ -16,9 +16,7 @@ async function bootstrap() {
 
     app.enableShutdownHooks()
 
-    app.useGlobalPipes(
-        new StandardSchemaValidationPipe({ transform: true, validateCustomDecorators: true }),
-    )
+    app.useGlobalPipes(new StandardSchemaValidationPipe({ transform: true, validateCustomDecorators: true }))
 
     app.useGlobalFilters(new PrismaExceptionFilter())
 

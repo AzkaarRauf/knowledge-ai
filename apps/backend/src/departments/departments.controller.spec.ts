@@ -61,9 +61,7 @@ describe('DepartmentsController', () => {
     it('update delegates to DepartmentsService.update', async () => {
         departmentsService.update.mockResolvedValue(department)
 
-        await expect(controller.update(department.id, { name: 'Engineering' })).resolves.toEqual(
-            department,
-        )
+        await expect(controller.update(department.id, { name: 'Engineering' })).resolves.toEqual(department)
         expect(departmentsService.update).toHaveBeenCalledWith(department.id, {
             name: 'Engineering',
         })

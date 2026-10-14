@@ -73,9 +73,9 @@ describe('AuthController', () => {
         it('propagates errors from AuthService.login', async () => {
             authService.login.mockRejectedValue(new Error('Invalid email or password'))
 
-            await expect(
-                controller.login({ email: 'jane@example.com', password: 'wrong' }, res),
-            ).rejects.toThrow('Invalid email or password')
+            await expect(controller.login({ email: 'jane@example.com', password: 'wrong' }, res)).rejects.toThrow(
+                'Invalid email or password',
+            )
         })
     })
 })

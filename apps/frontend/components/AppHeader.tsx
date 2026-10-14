@@ -21,8 +21,7 @@ export function AppHeader() {
   const pathname = usePathname()
 
   // root only matches itself; other items also match their nested routes
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`))
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">

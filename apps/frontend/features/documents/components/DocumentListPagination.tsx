@@ -10,13 +10,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { type DocumentListParamUpdates } from '@/features/documents/hooks/useDocumentListParams'
 import { type PaginationMeta } from '@/lib/schemas'
 

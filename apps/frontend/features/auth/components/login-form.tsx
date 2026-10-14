@@ -5,14 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type { z } from 'zod'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoginRequestSchema } from '@/features/auth/auth.schema'
 import { useLoginMutation } from '@/features/auth/hooks/login-mutation.hook'
 import { useAppForm } from '@/hooks/useAppForm'
@@ -73,25 +66,13 @@ export function LoginForm() {
             )}
           </form.AppField>
           <form.AppField name="password">
-            {(f) => (
-              <f.TextField
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                data-1p-ignore
-                required
-              />
-            )}
+            {(f) => <f.TextField label="Password" type="password" autoComplete="current-password" data-1p-ignore required />}
           </form.AppField>
         </CardContent>
 
         <CardFooter className="flex-col gap-3">
           <form.AppForm>
-            <form.SubscribeButton
-              label="Login"
-              submittingLabel="Logging in..."
-              className="w-full"
-            />
+            <form.SubscribeButton label="Login" submittingLabel="Logging in..." className="w-full" />
           </form.AppForm>
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}

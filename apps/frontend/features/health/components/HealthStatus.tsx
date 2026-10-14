@@ -23,13 +23,7 @@ export function HealthStatus() {
           API {label}
         </span>
       )}
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        aria-label="Refresh health status"
-        disabled={isFetching}
-        onClick={() => refetch()}
-      >
+      <Button variant="ghost" size="icon-xs" aria-label="Refresh health status" disabled={isFetching} onClick={() => refetch()}>
         <RefreshCw className={cn(isFetching && 'animate-spin')} />
       </Button>
     </div>

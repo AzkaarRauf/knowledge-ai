@@ -12,15 +12,7 @@ type FieldShellProps = {
   children: ReactNode
 }
 
-export function FieldShell({
-  id,
-  label,
-  required,
-  error,
-  description,
-  className,
-  children,
-}: FieldShellProps) {
+export function FieldShell({ id, label, required, error, description, className, children }: FieldShellProps) {
   return (
     <div className={cn('grid content-start gap-2', className)}>
       <Label htmlFor={id}>

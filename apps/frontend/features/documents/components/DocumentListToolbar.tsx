@@ -6,12 +6,7 @@ import { useEffect, useState } from 'react'
 import { type DateRange } from 'react-day-picker'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from '@/components/ui/input-group'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { type DocumentListParamUpdates } from '@/features/documents/hooks/useDocumentListParams'
 import { type ListDocumentsQuery } from '@/features/documents/schemas'
@@ -46,10 +41,7 @@ function SearchInput({ query, setParams }: Props) {
   useEffect(() => {
     const value = search.trim()
     if (value === urlSearch) return
-    const id = setTimeout(
-      () => setParams({ search: value, page: undefined }, { replace: true }),
-      SEARCH_DEBOUNCE_MS,
-    )
+    const id = setTimeout(() => setParams({ search: value, page: undefined }, { replace: true }), SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(id)
   }, [search, urlSearch, setParams])
 
@@ -78,8 +70,7 @@ function SearchInput({ query, setParams }: Props) {
 
 function DateRangeFilter({ query, setParams }: Props) {
   const { createdFrom, createdTo } = query
-  const selected: DateRange | undefined =
-    createdFrom || createdTo ? { from: createdFrom, to: createdTo } : undefined
+  const selected: DateRange | undefined = createdFrom || createdTo ? { from: createdFrom, to: createdTo } : undefined
 
   function handleSelect(range: DateRange | undefined) {
     setParams({
@@ -94,9 +85,7 @@ function DateRangeFilter({ query, setParams }: Props) {
       <Popover>
         <PopoverTrigger render={<Button variant="outline" className="justify-start font-normal" />}>
           <CalendarIcon data-icon="inline-start" />
-          <span className={selected ? undefined : 'text-muted-foreground'}>
-            {formatRange(createdFrom, createdTo)}
-          </span>
+          <span className={selected ? undefined : 'text-muted-foreground'}>{formatRange(createdFrom, createdTo)}</span>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
@@ -110,12 +99,7 @@ function DateRangeFilter({ query, setParams }: Props) {
         </PopoverContent>
       </Popover>
       {selected && (
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Clear date filter"
-          onClick={() => handleSelect(undefined)}
-        >
+        <Button variant="ghost" size="icon" aria-label="Clear date filter" onClick={() => handleSelect(undefined)}>
           <X />
         </Button>
       )}

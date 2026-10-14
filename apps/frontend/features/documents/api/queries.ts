@@ -1,10 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { getDocuments } from '@/features/documents/api/documentsApi'
-import {
-  type ListDocumentsParams,
-  type ListDocumentsQuery,
-  ListDocumentsRequestSchema,
-} from '@/features/documents/schemas'
+import { type ListDocumentsParams, type ListDocumentsQuery, ListDocumentsRequestSchema } from '@/features/documents/schemas'
 
 export const documentKeys = {
   all: ['documents'] as const,

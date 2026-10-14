@@ -1,13 +1,7 @@
 'use client'
 
 import { useId, type ReactNode } from 'react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFieldContext } from '@/hooks/form-context'
 import { cn } from '@/lib/utils'
 import { FieldShell } from './FieldShell'
@@ -25,28 +19,13 @@ type SelectFieldProps = {
   className?: string
 }
 
-export function SelectField({
-  label,
-  options,
-  placeholder,
-  description,
-  required,
-  disabled,
-  className,
-}: SelectFieldProps) {
+export function SelectField({ label, options, placeholder, description, required, disabled, className }: SelectFieldProps) {
   const field = useFieldContext<string | null>()
   const id = useId()
   const error = formatFieldErrors(field.state.meta.errors)
 
   return (
-    <FieldShell
-      id={id}
-      label={label}
-      required={required}
-      error={error}
-      description={description}
-      className={className}
-    >
+    <FieldShell id={id} label={label} required={required} error={error} description={description} className={className}>
       <Select
         name={field.name}
         items={options}

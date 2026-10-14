@@ -21,11 +21,7 @@ export type CreateConversationResponse = z.infer<typeof createConversationRespon
 export const conversationsResponseSchema = paginatedSchema(conversationResponseSchema)
 export type ConversationsResponse = z.infer<typeof conversationsResponseSchema>
 
-export const CONVERSATION_SORT_FIELDS = [
-    'title',
-    'createdAt',
-    'updatedAt',
-] as const satisfies (keyof ConversationResponse)[]
+export const CONVERSATION_SORT_FIELDS = ['title', 'createdAt', 'updatedAt'] as const satisfies (keyof ConversationResponse)[]
 export const conversationsQuerySchema = listQuerySchema({
     sortFields: CONVERSATION_SORT_FIELDS,
     defaultSortBy: 'updatedAt',

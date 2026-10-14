@@ -30,13 +30,7 @@ export function DocumentUploadButton() {
 
   return (
     <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={DOCUMENT_MIME_TYPES.join(',')}
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      <input ref={inputRef} type="file" accept={DOCUMENT_MIME_TYPES.join(',')} className="hidden" onChange={handleFileChange} />
       <Button onClick={() => inputRef.current?.click()} disabled={uploadMutation.isPending}>
         <Upload />
         {uploadMutation.isPending ? 'Uploading...' : 'Upload document'}

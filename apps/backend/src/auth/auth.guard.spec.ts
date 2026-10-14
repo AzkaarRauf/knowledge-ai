@@ -8,11 +8,7 @@ describe('AuthGuard', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                AuthGuard,
-                Reflector,
-                { provide: JwtService, useValue: { verifyAsync: vi.fn() } },
-            ],
+            providers: [AuthGuard, Reflector, { provide: JwtService, useValue: { verifyAsync: vi.fn() } }],
         }).compile()
 
         guard = module.get<AuthGuard>(AuthGuard)

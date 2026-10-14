@@ -7,23 +7,9 @@ import { toast } from 'sonner'
 import { DOCUMENT_SORT_FIELDS, isError, safe } from 'shared'
 import { ConfirmationDialog } from '@/components/ConfirmationDialog'
 import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { documentsQueryOptions } from '@/features/documents/api/queries'
 import { DocumentListPagination } from '@/features/documents/components/DocumentListPagination'
@@ -68,13 +54,7 @@ export function DocumentList() {
 
   function handleSort(field: SortField) {
     const sortOrder =
-      query.sortBy === field
-        ? query.sortOrder === 'asc'
-          ? 'desc'
-          : 'asc'
-        : field === 'filename'
-          ? 'asc'
-          : 'desc'
+      query.sortBy === field ? (query.sortOrder === 'asc' ? 'desc' : 'asc') : field === 'filename' ? 'asc' : 'desc'
     setParams({ sortBy: field, sortOrder, page: undefined })
   }
 
@@ -122,21 +102,13 @@ export function DocumentList() {
         <>
           <div
             aria-busy={isPlaceholderData}
-            className={cn(
-              'rounded-lg border bg-card transition-opacity',
-              isPlaceholderData && 'opacity-60',
-            )}
+            className={cn('rounded-lg border bg-card transition-opacity', isPlaceholderData && 'opacity-60')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
                   <SortableHead field="filename" label="Name" query={query} onSort={handleSort} />
-                  <SortableHead
-                    field="createdAt"
-                    label="Uploaded"
-                    query={query}
-                    onSort={handleSort}
-                  />
+                  <SortableHead field="createdAt" label="Uploaded" query={query} onSort={handleSort} />
                   <TableHead className="w-12">
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -145,12 +117,8 @@ export function DocumentList() {
               <TableBody>
                 {documents.map((document) => (
                   <TableRow key={document.id}>
-                    <TableCell className="font-medium whitespace-normal break-all">
-                      {document.filename}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(document.createdAt).toLocaleString()}
-                    </TableCell>
+                    <TableCell className="font-medium whitespace-normal break-all">{document.filename}</TableCell>
+                    <TableCell className="text-muted-foreground">{new Date(document.createdAt).toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                       <Tooltip>
                         <TooltipTrigger
@@ -174,9 +142,7 @@ export function DocumentList() {
               </TableBody>
             </Table>
           </div>
-          {data && (
-            <DocumentListPagination meta={data.meta} hrefFor={hrefFor} setParams={setParams} />
-          )}
+          {data && <DocumentListPagination meta={data.meta} hrefFor={hrefFor} setParams={setParams} />}
         </>
       )}
 
@@ -209,9 +175,7 @@ function SortableHead({
   const isActive = query.sortBy === field
   const Icon = !isActive ? ArrowUpDown : query.sortOrder === 'asc' ? ArrowUp : ArrowDown
   return (
-    <TableHead
-      aria-sort={isActive ? (query.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
-    >
+    <TableHead aria-sort={isActive ? (query.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}>
       <Button variant="ghost" size="sm" className="-ml-2" onClick={() => onSort(field)}>
         {label}
         <Icon data-icon="inline-end" className={cn(!isActive && 'text-muted-foreground')} />

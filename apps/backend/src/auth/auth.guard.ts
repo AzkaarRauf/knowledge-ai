@@ -21,9 +21,7 @@ export class AuthGuard implements CanActivate {
         private reflector: Reflector,
     ) {}
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        if (
-            this.reflector.getAllAndOverride(SkipAuth, [context.getHandler(), context.getClass()])
-        ) {
+        if (this.reflector.getAllAndOverride(SkipAuth, [context.getHandler(), context.getClass()])) {
             return true
         }
 
