@@ -24,6 +24,7 @@ import { UsersModule } from './users/users.module.js'
 import { DocumentsModule } from './documents/documents.module.js'
 import { S3Module } from './s3/s3.module.js'
 import { AuthGuard } from './auth/auth.guard.js'
+import { ConversationsModule } from './conversations/conversations.module.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -52,6 +53,7 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         HashingModule,
         DocumentsModule,
         S3Module,
+        ConversationsModule,
     ],
     controllers: [AppController],
     providers: [
