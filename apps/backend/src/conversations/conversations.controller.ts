@@ -10,6 +10,8 @@ import { CreateConversationRequestDto } from './dto/create-conversation-request.
 import { CreateConversationResponseDto } from './dto/create-conversation-response.dto.js'
 import { UpdateConversationRequestDto } from './dto/update-conversation-request.dto.js'
 import { UpdateConversationResponseDto } from './dto/update-conversation-response.dto.js'
+import { MessagesQueryDto } from './dto/messages-query.dto.js'
+import { MessagesResponseDto } from './dto/messages-response.dto.js'
 import { ApiBearerAuth } from '@nestjs/swagger'
 
 @ApiBearerAuth()
@@ -30,6 +32,16 @@ export class ConversationsController {
     @ZodResponse({ type: ConversationsResponseDto })
     findAll(@Query() query: ConversationsQueryDto, @JwtPayload() { userId }: JwtPayloadDto) {
         return this.conversationsService.findAll({ userId, query })
+    }
+
+    @Get(':id/messages')
+    @ZodResponse({ type: MessagesResponseDto })
+    findAllMessages(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Query() query: MessagesQueryDto,
+        @JwtPayload() { userId }: JwtPayloadDto,
+    ) {
+        return this.conversationsService.findAllMessages({ id, userId, query })
     }
 
     @Get(':id')
