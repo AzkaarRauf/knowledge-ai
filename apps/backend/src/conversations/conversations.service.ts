@@ -31,7 +31,7 @@ export class ConversationsService {
         const [conversations, total] = await this.db.$transaction([
             this.db.conversation.findMany({
                 where,
-                orderBy: { [query.sortBy]: query.sortOrder, id: 'asc' },
+                orderBy: [{ [query.sortBy]: query.sortOrder }, { id: 'asc' }],
                 ...toPrismaPagination(query),
             }),
             this.db.conversation.count({ where }),

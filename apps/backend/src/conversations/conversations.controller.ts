@@ -10,7 +10,9 @@ import { CreateConversationRequestDto } from './dto/create-conversation-request.
 import { CreateConversationResponseDto } from './dto/create-conversation-response.dto.js'
 import { UpdateConversationRequestDto } from './dto/update-conversation-request.dto.js'
 import { UpdateConversationResponseDto } from './dto/update-conversation-response.dto.js'
+import { ApiBearerAuth } from '@nestjs/swagger'
 
+@ApiBearerAuth()
 @Controller('conversations')
 export class ConversationsController {
     constructor(private readonly conversationsService: ConversationsService) {}
