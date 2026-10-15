@@ -1,1 +1,4 @@
-export const REFRESH_TOKEN_DURATION = 1 * 60 * 60 * 1000 // 1 hour
+/**
+ * 7 days
+ */
+export const REFRESH_TOKEN_DURATION = 7 * 24 * 60 * 60 * 1000

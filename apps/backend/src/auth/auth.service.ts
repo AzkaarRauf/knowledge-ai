@@ -118,6 +118,7 @@ export class AuthService {
             secure: true,
             sameSite: true,
             httpOnly: true,
+            maxAge: REFRESH_TOKEN_DURATION,
         })
     }
     private clearRefreshToken(res: Response) {
