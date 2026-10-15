@@ -94,7 +94,7 @@ function DateRangeFilter({ query, setParams }: Props) {
             onSelect={handleSelect}
             defaultMonth={createdFrom}
             numberOfMonths={2}
-            disabled={{ after: new Date() }}
+            disabled={(date) => date > new Date()}
           />
         </PopoverContent>
       </Popover>
