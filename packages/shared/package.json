@@ -4,7 +4,9 @@
     "scripts": {
         "dev": "tsc --watch",
         "build": "tsc",
-        "format": "prettier --write \"src/**/*.ts\""
+        "lint": "oxlint --type-aware src",
+        "format": "oxfmt src",
+        "format:check": "oxfmt --check src"
     },
     "keywords": [],
     "author": "",
@@ -18,7 +20,9 @@
         }
     },
     "devDependencies": {
-        "prettier": "^3.9.10",
+        "oxfmt": "^0.73.0",
+        "oxlint": "^1.88.0",
+        "oxlint-tsgolint": "^7.0.2004",
         "typescript": "^7.0.2",
         "zod": "^4.6.5"
     },

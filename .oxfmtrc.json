@@ -1,0 +1,16 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "singleQuote": true,
+    "trailingComma": "all",
+    "semi": false,
+    "printWidth": 130,
+    "tabWidth": 4,
+    "sortPackageJson": false,
+    "ignorePatterns": ["apps/frontend/.next", "apps/frontend/components/ui"],
+    "overrides": [
+        {
+            "files": ["apps/frontend/**"],
+            "options": { "tabWidth": 2 }
+        }
+    ]
+}
