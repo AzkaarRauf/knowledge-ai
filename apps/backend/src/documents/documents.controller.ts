@@ -3,7 +3,6 @@ import {
     Delete,
     FileTypeValidator,
     Get,
-    HttpCode,
     HttpStatus,
     MaxFileSizeValidator,
     Param,
@@ -17,16 +16,16 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse } from '@nestjs/swagger'
+import { type Response } from 'express'
+import { ZodResponse } from 'nestjs-zod'
+import { DOCUMENT_MAX_SIZE, DOCUMENT_MIME_TYPES } from 'shared'
+import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
+import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
 import { DocumentsService } from './documents.service.js'
-import { UploadDocumentDto } from './dto/upload-document.dto.js'
 import { DocumentResponseDto } from './dto/document-response.dto.js'
 import { ListDocumentsQueryDto } from './dto/list-documents-query.dto.js'
 import { PaginatedDocumentsResponseDto } from './dto/paginated-documents-response.dto.js'
-import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
-import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
-import { ZodResponse } from 'nestjs-zod'
-import { type Response } from 'express'
-import { DOCUMENT_MAX_SIZE, DOCUMENT_MIME_TYPES } from 'shared'
+import { UploadDocumentDto } from './dto/upload-document.dto.js'
 
 @ApiBearerAuth()
 @Controller('documents')

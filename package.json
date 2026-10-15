@@ -5,6 +5,7 @@
     "main": "index.js",
     "scripts": {
         "dev": "pnpm -r --parallel dev",
+        "lint": "pnpm -r --parallel lint",
         "be": "pnpm --filter backend",
         "fe": "pnpm --filter frontend",
         "shared": "pnpm --filter shared",

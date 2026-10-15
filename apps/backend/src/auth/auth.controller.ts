@@ -1,25 +1,13 @@
-import {
-    Body,
-    Controller,
-    Cookies,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Post,
-    Req,
-    Res,
-    UnauthorizedException,
-} from '@nestjs/common'
-import { AuthService } from './auth.service.js'
-import { RegisterUserDto } from './dtos/register-user.dto.js'
-import { LoginRequestDto } from './dtos/login.dto.js'
+import { Body, Controller, Cookies, Delete, Get, Post, Res, UnauthorizedException } from '@nestjs/common'
+import { type Response } from 'express'
 import { ZodResponse } from 'nestjs-zod'
-import { LoginResponseDto } from './dtos/login-response.dto.js'
-import { RegisterResponseDto } from './dtos/register-response.dto.js'
-import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
-import { type Response, type Request } from 'express'
 import { SkipAuth } from 'src/decorators/skip-auth/skip-auth.decorator.js'
+import { AuthService } from './auth.service.js'
+import { LoginResponseDto } from './dtos/login-response.dto.js'
+import { LoginRequestDto } from './dtos/login.dto.js'
+import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
+import { RegisterResponseDto } from './dtos/register-response.dto.js'
+import { RegisterUserDto } from './dtos/register-user.dto.js'
 
 @SkipAuth()
 @Controller('auth')
