@@ -1,9 +1,9 @@
 import { Logger } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { type Response } from 'express'
-import { EmbeddingService } from 'src/embedding/embedding.service.js'
 import { LLMService } from 'src/llm/llm.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
+import { RAGService } from 'src/rag/rag.service.js'
 import { ConversationsService } from './conversations.service.js'
 
 const id = '0b8f8f5e-3c1a-4d2b-9a43-7c1d1f0a2e33'
@@ -22,10 +22,9 @@ describe('ConversationsService', () => {
     const db = {
         conversation: { findFirstOrThrow: vi.fn(), update: vi.fn() },
         message: { findMany: vi.fn(), createMany: vi.fn() },
-        $queryRaw: vi.fn(),
         $transaction: vi.fn(),
     }
-    const embeddingService = { embedQuery: vi.fn() }
+    const ragService = { retrieveDocumentChunks: vi.fn() }
     const llmService = { toHistory: vi.fn(), stream: vi.fn() }
     const res = { setHeaders: vi.fn(), flushHeaders: vi.fn(), write: vi.fn(), end: vi.fn() }
 
@@ -40,7 +39,7 @@ describe('ConversationsService', () => {
             providers: [
                 ConversationsService,
                 { provide: PrismaService, useValue: db },
-                { provide: EmbeddingService, useValue: embeddingService },
+                { provide: RAGService, useValue: ragService },
                 { provide: LLMService, useValue: llmService },
             ],
         }).compile()
@@ -54,8 +53,7 @@ describe('ConversationsService', () => {
 
         beforeEach(() => {
             db.conversation.findFirstOrThrow.mockResolvedValue({ id })
-            embeddingService.embedQuery.mockResolvedValue([0.1, 0.2])
-            db.$queryRaw.mockResolvedValue([
+            ragService.retrieveDocumentChunks.mockResolvedValue([
                 { id: 'c1', content: 'chunk one', metadata: {}, distance: 0.1 },
                 { id: 'c2', content: 'chunk two', metadata: {}, distance: 0.2 },
             ])
@@ -69,20 +67,17 @@ describe('ConversationsService', () => {
 
             await expect(chat()).rejects.toThrow('P2025')
             expect(db.conversation.findFirstOrThrow).toHaveBeenCalledWith({ where: { id, userId }, select: { id: true } })
-            expect(embeddingService.embedQuery).not.toHaveBeenCalled()
+            expect(ragService.retrieveDocumentChunks).not.toHaveBeenCalled()
             expect(llmService.stream).not.toHaveBeenCalled()
             expect(res.write).not.toHaveBeenCalled()
         })
 
-        it('searches chunks with the prompt embedding and conversation id', async () => {
+        it('retrieves chunks with the prompt and conversation id', async () => {
             llmService.stream.mockResolvedValue(fakeStream([]))
 
             await chat()
 
-            expect(embeddingService.embedQuery).toHaveBeenCalledWith('what is x?')
-            const values = db.$queryRaw.mock.calls[0].slice(1)
-            expect(values).toContain('[0.1,0.2]')
-            expect(values).toContain(id)
+            expect(ragService.retrieveDocumentChunks).toHaveBeenCalledWith({ prompt: 'what is x?', conversationId: id })
         })
 
         it('passes history, prompt and joined chunk context to the llm', async () => {

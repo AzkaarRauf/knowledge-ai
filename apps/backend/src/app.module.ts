@@ -19,6 +19,7 @@ import { AuthGuard } from './auth/auth.guard.js'
 import { ConversationsModule } from './conversations/conversations.module.js'
 import { EmbeddingModule } from './embedding/embedding.module.js'
 import { LLMModule } from './llm/llm.module.js'
+import { RAGModule } from './rag/rag.module.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -50,6 +51,7 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         S3Module,
         EmbeddingModule,
         LLMModule,
+        RAGModule,
     ],
     controllers: [AppController],
     providers: [
