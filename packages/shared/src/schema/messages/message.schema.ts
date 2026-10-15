@@ -21,4 +21,5 @@ export const MESSAGE_SORT_FIELDS = ['createdAt'] as const satisfies (keyof Messa
 export const messagesQuerySchema = listQuerySchema({
     sortFields: MESSAGE_SORT_FIELDS,
     defaultSortBy: 'createdAt',
+    defaultSortOrder: 'asc',
 })

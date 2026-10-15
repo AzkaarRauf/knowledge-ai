@@ -20,14 +20,16 @@ export type SortOrder = z.infer<typeof sortOrderSchema>
 export function listQuerySchema<const TSortField extends string>({
     defaultSortBy,
     sortFields,
+    defaultSortOrder = 'desc',
 }: {
     sortFields: readonly [TSortField, ...TSortField[]]
     defaultSortBy: NoInfer<TSortField>
+    defaultSortOrder?: SortOrder
 }) {
     return paginationQuerySchema.extend({
         search: z.string().trim().max(200).optional(),
         sortBy: z.enum(sortFields).default(defaultSortBy),
-        sortOrder: sortOrderSchema.default('desc'),
+        sortOrder: sortOrderSchema.default(defaultSortOrder),
     })
 }
 

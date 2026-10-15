@@ -17,7 +17,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
             const message = `[${req.id}] <-- ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`
 
-            if (res.statusCode >= 200 && res.statusCode < 300) {
+            if (res.statusCode >= 200 && res.statusCode < 400) {
                 this.logger.log(message)
             } else {
                 this.logger.error(message)
