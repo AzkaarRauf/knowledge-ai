@@ -1,4 +1,17 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Query,
+    Res,
+} from '@nestjs/common'
 import { ZodResponse } from 'nestjs-zod'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
 import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
@@ -13,6 +26,8 @@ import { UpdateConversationResponseDto } from './dto/update-conversation-respons
 import { MessagesQueryDto } from './dto/messages-query.dto.js'
 import { MessagesResponseDto } from './dto/messages-response.dto.js'
 import { ApiBearerAuth } from '@nestjs/swagger'
+import { ChatRequestDto } from './dto/chat-request.dto.js'
+import { type Response } from 'express'
 
 @ApiBearerAuth()
 @Controller('conversations')
@@ -63,5 +78,16 @@ export class ConversationsController {
     @Delete(':id')
     remove(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
         return this.conversationsService.remove({ id, userId })
+    }
+
+    @Post(':id/chat')
+    @HttpCode(HttpStatus.OK)
+    chat(
+        @Param('id', ParseUUIDPipe) id: string,
+        @JwtPayload() { userId }: JwtPayloadDto,
+        @Body() chatDto: ChatRequestDto,
+        @Res() res: Response,
+    ) {
+        return this.conversationsService.chat({ id, userId, chatDto, res })
     }
 }

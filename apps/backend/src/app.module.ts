@@ -17,6 +17,8 @@ import { DocumentsModule } from './documents/documents.module.js'
 import { S3Module } from './s3/s3.module.js'
 import { AuthGuard } from './auth/auth.guard.js'
 import { ConversationsModule } from './conversations/conversations.module.js'
+import { EmbeddingModule } from './embedding/embedding.module.js'
+import { LLMModule } from './llm/llm.module.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -38,6 +40,7 @@ class HttpExceptionFilter extends BaseExceptionFilter {
 @Module({
     imports: [
         AuthModule,
+        ConversationsModule,
         DepartmentsModule,
         HealthModule,
         PrismaModule,
@@ -45,7 +48,8 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         HashingModule,
         DocumentsModule,
         S3Module,
-        ConversationsModule,
+        EmbeddingModule,
+        LLMModule,
     ],
     controllers: [AppController],
     providers: [

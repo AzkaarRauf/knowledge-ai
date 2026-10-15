@@ -2,16 +2,16 @@ import { TextLoader } from '@langchain/classic/document_loaders/fs/text'
 import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
 import { DocumentLoader } from '@langchain/core/document_loaders/base'
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai'
 import { CharacterTextSplitter } from '@langchain/textsplitters'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { createHash, randomUUID } from 'node:crypto'
+import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
+import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
+import { EmbeddingService } from 'src/embedding/embedding.service.js'
+import { Document, Prisma } from 'src/generated/prisma/client.js'
 import { join, sql } from 'src/generated/prisma/internal/prismaNamespace.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { S3Service } from 'src/s3/s3.service.js'
-import { Document, Prisma } from 'src/generated/prisma/client.js'
-import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
-import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
 
 @Injectable()
 export class DocumentsService {
@@ -20,6 +20,7 @@ export class DocumentsService {
     constructor(
         private s3Service: S3Service,
         private db: PrismaService,
+        private embeddingService: EmbeddingService,
     ) {}
 
     async upload({ file, userId }: { file: Express.Multer.File; userId: string }): Promise<{
@@ -53,11 +54,7 @@ export class DocumentsService {
         const split = await textSplitter.splitDocuments(doc)
 
         // embedding
-        const embeddings = new GoogleGenerativeAIEmbeddings({
-            model: 'gemini-embedding-2',
-            outputDimensionality: 768,
-        })
-        const embeds = await embeddings.embedDocuments(split.map((item) => item.pageContent))
+        const embeds = await this.embeddingService.embedDocuments(split)
 
         // save document to object store
         const key = this.s3Service.generateKey({
