@@ -5,7 +5,9 @@ import { MessageRole } from 'src/generated/prisma/enums.js'
 
 @Injectable()
 export class LLMService {
-    private llm = new ChatGoogleGenerativeAI({ model: 'gemini-3.1-flash-lite', maxRetries: 1 })
+    // private model =  'gemini-3.1-flash-lite'
+    private model = 'gemini-3.5-flash-lite'
+    private llm = new ChatGoogleGenerativeAI({ model: this.model, maxRetries: 1 })
     private template = ChatPromptTemplate.fromMessages([
         // sys prompt tells ai to ans from context only.
         [

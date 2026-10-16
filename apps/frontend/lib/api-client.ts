@@ -1,19 +1,19 @@
-import axios, { isAxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { REFRESH_TOKEN_PATH, authHeaders, redirectToLogin, refreshAccessToken } from '@/lib/auth'
+import { REFRESH_TOKEN_PATH, redirectToLogin, refreshAccessToken } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { handleErrorResponse } from '@/lib/errors'
+import axios, { isAxiosError, type InternalAxiosRequestConfig } from 'axios'
 
-export const api = axios.create({ baseURL: env.NEXT_PUBLIC_API_BASE_URL })
-
-api.interceptors.request.use((config) => {
-  for (const [key, value] of Object.entries(authHeaders())) config.headers.set(key, value)
-  return config
-})
-
-type RetryableConfig = InternalAxiosRequestConfig & { _retried?: boolean }
+export const api = axios.create({ baseURL: env.NEXT_PUBLIC_API_BASE_URL, withCredentials: true })
 
 // Login/register 401s are bad credentials, not an expired token.
 const NO_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/logout', REFRESH_TOKEN_PATH]
+
+// api.interceptors.request.use(async (config) => {
+//   for (const [key, value] of Object.entries(authHeaders())) config.headers.set(key, value)
+//   return config
+// })
+
+type RetryableConfig = InternalAxiosRequestConfig & { _retried?: boolean }
 
 /** On a 401, rotate the token once and replay the request; otherwise map to a typed error. */
 async function retryAfterRefresh(error: unknown) {

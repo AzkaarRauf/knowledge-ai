@@ -4,16 +4,18 @@ import { Response } from 'express'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
 import { HashingService } from 'src/hashing/hashing.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
-import { REFRESH_TOKEN_DURATION } from './auth.constants.js'
+import { ACCESS_TOKEN_DURATION, REFRESH_TOKEN_DURATION } from './auth.constants.js'
 import { LoginResponseDto } from './dtos/login-response.dto.js'
 import { LoginRequestDto } from './dtos/login.dto.js'
 import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
 import { RegisterResponseDto } from './dtos/register-response.dto.js'
 import { RegisterUserDto } from './dtos/register-user.dto.js'
+import { ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME } from 'shared'
 
 @Injectable()
 export class AuthService {
-    private readonly refreshTokenCookieName = 'refreshToken'
+    private readonly refreshTokenCookieName = REFRESH_TOKEN_COOKIE_NAME
+    private readonly accessTokenCookieName = ACCESS_TOKEN_COOKIE_NAME
     constructor(
         private db: PrismaService,
         private hashingService: HashingService,
@@ -40,6 +42,7 @@ export class AuthService {
         const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
 
         this.setRefreshToken(res, newRefreshToken.token)
+        this.setAccessToken(res, token)
 
         const response: RegisterResponseDto = { user, token }
 
@@ -71,6 +74,7 @@ export class AuthService {
         const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
 
         this.setRefreshToken(res, newRefreshToken.token)
+        this.setAccessToken(res, token)
 
         const response: LoginResponseDto = { user, token }
 
@@ -98,12 +102,13 @@ export class AuthService {
             userId: oldToken.userId,
         })
         this.setRefreshToken(res, newToken.token)
+        this.setAccessToken(res, accessToken)
         const response = { token: accessToken } satisfies RefreshTokenResponseDto
         return response
     }
 
     async logout(refreshToken: string | undefined, res: Response) {
-        this.clearRefreshToken(res)
+        this.clearAllAuthTokens(res)
         if (!refreshToken) return
         const token = await this.db.refreshToken.findFirst({ where: { token: refreshToken } })
         if (!token) return
@@ -121,7 +126,22 @@ export class AuthService {
             maxAge: REFRESH_TOKEN_DURATION,
         })
     }
+    private setAccessToken(res: Response, accessToken: string) {
+        res.cookie(this.accessTokenCookieName, accessToken, {
+            secure: true,
+            sameSite: true,
+            httpOnly: true,
+            maxAge: ACCESS_TOKEN_DURATION,
+        })
+    }
     private clearRefreshToken(res: Response) {
         res.clearCookie(this.refreshTokenCookieName)
+    }
+    private clearAccessToken(res: Response) {
+        res.clearCookie(this.accessTokenCookieName)
+    }
+    private clearAllAuthTokens(res: Response) {
+        this.clearAccessToken(res)
+        this.clearRefreshToken(res)
     }
 }

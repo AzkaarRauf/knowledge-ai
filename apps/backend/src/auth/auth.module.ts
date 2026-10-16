@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller.js'
 import { HashingModule } from 'src/hashing/hashing.module.js'
 import { env } from 'src/env.js'
 import { JwtModule } from '@nestjs/jwt'
+import { ACCESS_TOKEN_DURATION } from './auth.constants.js'
 
 @Module({
     controllers: [AuthController],
@@ -14,7 +15,7 @@ import { JwtModule } from '@nestjs/jwt'
             secret: env.JWT_SECRET,
             global: true,
             signOptions: {
-                expiresIn: '1d',
+                expiresIn: ACCESS_TOKEN_DURATION / 1000,
             },
         }),
     ],

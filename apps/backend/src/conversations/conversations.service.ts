@@ -54,7 +54,7 @@ export class ConversationsService {
         res.setHeaders(
             new Map([
                 ['Content-Type', 'text/event-stream'],
-                ['Cache-Control', 'no-cache'],
+                ['Cache-Control', 'no-cache, no-transform'],
                 ['Connection', 'keep-alive'],
             ]),
         )
@@ -63,8 +63,7 @@ export class ConversationsService {
         try {
             for await (const chunk of stream) {
                 finalContent += chunk.text
-                res.write(`event: chunk\n`)
-                res.write(`data: ${JSON.stringify(chunk.text)}\n\n`)
+                res.write(`event: chunk\ndata: ${JSON.stringify(chunk.text)}\n\n`)
             }
             // save to db after stream ends
             const answeredAt = new Date()
