@@ -40,7 +40,6 @@ export class ConversationsService {
             where: { id, userId },
             select: {
                 messages: {
-                    where: { conversationId: id },
                     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
                     select: { role: true, content: true },
                 },
