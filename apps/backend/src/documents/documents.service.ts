@@ -2,7 +2,7 @@ import { TextLoader } from '@langchain/classic/document_loaders/fs/text'
 import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
 import { DocumentLoader } from '@langchain/core/document_loaders/base'
-import { CharacterTextSplitter } from '@langchain/textsplitters'
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { createHash, randomUUID } from 'node:crypto'
 import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
@@ -41,17 +41,20 @@ export class DocumentsService {
                 loader = new TextLoader(blob)
                 break
             case 'application/pdf':
-                loader = new PDFLoader(blob)
+                loader = new PDFLoader(blob, { splitPages: false })
                 break
             default:
                 loader = new DocxLoader(blob)
                 break
         }
-        const doc = await loader.load()
+        const docs = await loader.load()
+        for (const doc of docs) {
+            doc.metadata.source = file.originalname
+        }
 
         // chunking
-        const textSplitter = new CharacterTextSplitter({ chunkOverlap: 200, chunkSize: 1000 })
-        const split = await textSplitter.splitDocuments(doc)
+        const textSplitter = new RecursiveCharacterTextSplitter({ chunkOverlap: 200, chunkSize: 1000 })
+        const split = await textSplitter.splitDocuments(docs)
 
         // embedding
         const embeds = await this.embeddingService.embedDocuments(split)

@@ -36,18 +36,22 @@ export class ConversationsService {
         // time the user sent the prompt. keeps user msg before assistant msg when sorting
         const promptSentAt = new Date()
         // throws P2025 (404) if conversation is missing or not owned by user
-        await this.db.conversation.findFirstOrThrow({ where: { id, userId }, select: { id: true } })
-        const [chunks, messages] = await Promise.all([
-            this.ragService.retrieveDocumentChunks({ prompt, conversationId: id }),
-            this.db.message.findMany({
-                where: { conversationId: id },
-                orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-                select: { role: true, content: true },
-            }),
-        ])
-
+        const { messages } = await this.db.conversation.findFirstOrThrow({
+            where: { id, userId },
+            select: {
+                messages: {
+                    where: { conversationId: id },
+                    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+                    select: { role: true, content: true },
+                },
+            },
+        })
         const history = this.llmService.toHistory(messages)
+
+        const rewrittenPrompt = await this.llmService.rewriteQuery({ history, prompt })
+        const chunks = await this.ragService.retrieveDocumentChunks({ prompt: rewrittenPrompt, conversationId: id })
         const context = chunks.map((chunk) => chunk.content).join('\n\n')
+
         const stream = await this.llmService.stream({ history, prompt, context })
 
         // stream the response back to user
