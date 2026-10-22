@@ -19,6 +19,7 @@ export class LLMService {
                 You refuse to even entertain questions beyond the Context.
                 An empty Context is pure horror for you. It leaves you speechless, allowing you only to politely refuse.
                 The term "Context" or your role as an "SME" is not something you ever mention in your responses.
+                Your responses must give citations from the context. Format: <<Citation {{source}}>>
                 Context: {context}
             `,
         ],
