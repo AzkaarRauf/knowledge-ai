@@ -11,7 +11,8 @@
         "shared": "pnpm --filter shared",
         "format": "pnpm -r --parallel format",
         "nest": "pnpm -F backend exec nest",
-        "prisma": "pnpm -F backend exec prisma"
+        "prisma": "pnpm -F backend exec prisma",
+        "prepare": "git config core.hooksPath .githooks"
     },
     "keywords": [],
     "author": "",

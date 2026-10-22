@@ -91,13 +91,14 @@ export class DocumentsService {
                         sql`(
                                 ${randomUUID()}::uuid,
                                 ${item.pageContent},
+                                to_tsvector('english', ${item.pageContent}),
                                 ${`[${embeds[i].join(',')}]`}::vector,
                                 ${document.id}::uuid, ${JSON.stringify(item.metadata)}::jsonb,
                                 now()
                               )`,
                 )
                 await tx.$executeRaw`
-                      INSERT INTO "DocumentChunk" ("id", "content", "embedding", "documentId", "metadata", "updatedAt")
+                      INSERT INTO "DocumentChunk" ("id", "content", "contentSearch", "embedding", "documentId", "metadata", "updatedAt")
                       VALUES ${join(rows)}`
 
                 return document

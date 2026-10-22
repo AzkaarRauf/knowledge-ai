@@ -1,0 +1,31 @@
+#!/bin/sh
+# Block commits whose prisma migrations leave a custom index dropped.
+# schema.prisma can't express these indexes, so `prisma migrate dev` adds DROP INDEX for them.
+# To drop one on purpose, remove it from PROTECTED_INDEXES.
+PROTECTED_INDEXES="DocumentChunk_embedding_idx"
+MIGRATIONS_DIR="apps/backend/prisma/migrations"
+
+# only check when migrations are staged
+git diff --cached --name-only -- "$MIGRATIONS_DIR" | grep -q . || exit 0
+
+failed=0
+for index in $PROTECTED_INDEXES; do
+    # walk staged migrations in order. the last CREATE/DROP of the index decides if it exists
+    last=""
+    last_file=""
+    for file in $(git ls-files -- "$MIGRATIONS_DIR/*/migration.sql" | sort); do
+        match=$(git show ":$file" | grep -iE "(CREATE|DROP) +INDEX.*\"$index\"" | tail -n 1)
+        if [ -n "$match" ]; then
+            last="$match"
+            last_file="$file"
+        fi
+    done
+    if echo "$last" | grep -qi "^ *DROP"; then
+        echo "pre-commit: custom index \"$index\" is dropped by $last_file"
+        echo "  remove the DROP INDEX line, or add a migration that recreates it."
+        echo "  create migrations with \`prisma migrate dev --create-only\`, apply with \`prisma migrate deploy\`."
+        failed=1
+    fi
+done
+
+exit $failed

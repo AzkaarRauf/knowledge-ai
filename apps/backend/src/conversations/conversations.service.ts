@@ -50,7 +50,13 @@ export class ConversationsService {
         const rewrittenPrompt = await this.llmService.rewriteQuery({ history, prompt })
         const chunks = await this.ragService.retrieveDocumentChunks({ prompt: rewrittenPrompt, conversationId: id })
         const context = chunks
-            .map((chunk) => `content:${JSON.stringify(chunk.content)}\nmetadata:${JSON.stringify(chunk.metadata)}`)
+            .map((chunk) => {
+                const content = `content:${JSON.stringify(chunk.content)}`
+                if (typeof chunk.metadata === 'object' && chunk.metadata !== null && 'source' in chunk.metadata) {
+                    return content + `\nmetadata:${JSON.stringify({ source: chunk.metadata.source })}`
+                }
+                return content
+            })
             .join('\n\n')
 
         const stream = await this.llmService.stream({ history, prompt, context })

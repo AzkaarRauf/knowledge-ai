@@ -54,8 +54,8 @@ describe('ConversationsService', () => {
         beforeEach(() => {
             db.conversation.findFirstOrThrow.mockResolvedValue({ id })
             ragService.retrieveDocumentChunks.mockResolvedValue([
-                { id: 'c1', content: 'chunk one', metadata: {}, distance: 0.1 },
-                { id: 'c2', content: 'chunk two', metadata: {}, distance: 0.2 },
+                { id: 'c1', content: 'chunk one', metadata: {}, score: 0.03 },
+                { id: 'c2', content: 'chunk two', metadata: {}, score: 0.02 },
             ])
             db.message.findMany.mockResolvedValue([{ role: 'user', content: 'old question' }])
             llmService.toHistory.mockReturnValue(history)

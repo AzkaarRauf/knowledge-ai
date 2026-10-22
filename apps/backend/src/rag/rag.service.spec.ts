@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { EmbeddingService } from 'src/embedding/embedding.service.js'
+import { sql } from 'src/generated/prisma/internal/prismaNamespace.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { RAGService } from './rag.service.js'
 
@@ -9,6 +10,12 @@ describe('RAGService', () => {
     let service: RAGService
     const db = { $queryRaw: vi.fn() }
     const embeddingService = { embedQuery: vi.fn() }
+
+    // rebuild the tagged template call so nested sql fragments are flattened
+    const queryAt = (i: number) => {
+        const [strings, ...values] = db.$queryRaw.mock.calls[i]
+        return sql(strings, ...values)
+    }
 
     beforeEach(async () => {
         vi.resetAllMocks()
@@ -25,27 +32,39 @@ describe('RAGService', () => {
     })
 
     describe('retrieveDocumentChunks', () => {
-        const chunks = [
-            { id: 'c1', content: 'chunk one', metadata: {}, distance: 0.1 },
-            { id: 'c2', content: 'chunk two', metadata: {}, distance: 0.2 },
-        ]
+        const c1 = { id: 'c1', content: 'chunk one', metadata: {} }
+        const c2 = { id: 'c2', content: 'chunk two', metadata: {} }
+        const c3 = { id: 'c3', content: 'chunk three', metadata: {} }
 
         beforeEach(() => {
             embeddingService.embedQuery.mockResolvedValue([0.1, 0.2])
-            db.$queryRaw.mockResolvedValue(chunks)
+            db.$queryRaw.mockImplementation((strings: TemplateStringsArray) =>
+                Promise.resolve(strings.join('').includes('<=>') ? [c1, c2] : [c2, c3]),
+            )
         })
 
-        it('searches chunks with the prompt embedding and conversation id', async () => {
+        it('runs a vector search with the prompt embedding and conversation id', async () => {
             await service.retrieveDocumentChunks({ prompt: 'what is x?', conversationId })
 
             expect(embeddingService.embedQuery).toHaveBeenCalledWith('what is x?')
-            const values = db.$queryRaw.mock.calls[0].slice(1)
-            expect(values).toContain('[0.1,0.2]')
-            expect(values).toContain(conversationId)
+            const query = [0, 1].map(queryAt).find((q) => q.sql.includes('<=>'))
+            expect(query?.values).toContain('[0.1,0.2]')
+            expect(query?.values).toContain(conversationId)
         })
 
-        it('returns the found chunks', async () => {
-            await expect(service.retrieveDocumentChunks({ prompt: 'what is x?', conversationId })).resolves.toEqual(chunks)
+        it('runs a text search with the prompt text and conversation id', async () => {
+            await service.retrieveDocumentChunks({ prompt: 'what is x?', conversationId })
+
+            const query = [0, 1].map(queryAt).find((q) => q.sql.includes('@@'))
+            expect(query?.values).toContain('what is x?')
+            expect(query?.values).toContain(conversationId)
+        })
+
+        it('merges both results, ranking chunks found by both searches first', async () => {
+            const chunks = await service.retrieveDocumentChunks({ prompt: 'what is x?', conversationId })
+
+            expect(chunks.map((c) => c.id)).toEqual(['c2', 'c1', 'c3'])
+            expect(chunks[0]).toMatchObject({ ...c2, score: expect.any(Number) })
         })
     })
 })

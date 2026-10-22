@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     agentFeedback: true,
+    // rewrites proxy times out after 30s by default, which cuts long uploads and chat streams.
+    // 5 mins
+    proxyTimeout: 5 * 60 * 1000,
   },
   cacheComponents: true,
   partialPrefetching: true,
