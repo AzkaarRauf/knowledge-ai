@@ -36,17 +36,19 @@ model RefreshToken {
 }
 
 model Department {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User[]
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  users         User[]
+  documents     Document[]
+  conversations Conversation[]
 }
 
 model Document {
   id             String          @id @default(uuid()) @db.Uuid
   filename       String
-  fileHash       String          @unique
+  fileHash       String
   s3key          String
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -55,6 +57,10 @@ model Document {
   userId         String          @db.Uuid
   conversation   Conversation?   @relation(fields: [conversationId], references: [id])
   conversationId String?         @db.Uuid
+  department     Department?     @relation(fields: [departmentId], references: [id])
+  departmentId   String?         @db.Uuid
+
+  @@unique([fileHash, departmentId])
 }
 
 model DocumentChunk {
@@ -71,14 +77,16 @@ model DocumentChunk {
 }
 
 model Conversation {
-  id        String     @id @default(uuid()) @db.Uuid
-  title     String     @default("New Chat")
-  user      User       @relation(fields: [userId], references: [id])
-  documents Document[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  userId    String     @db.Uuid
-  messages  Message[]
+  id           String      @id @default(uuid()) @db.Uuid
+  title        String      @default("New Chat")
+  user         User        @relation(fields: [userId], references: [id])
+  documents    Document[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  userId       String      @db.Uuid
+  messages     Message[]
+  department   Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?     @db.Uuid
 }
 
 enum MessageRole {

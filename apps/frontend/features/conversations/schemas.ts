@@ -13,6 +13,7 @@ import { paginatedSchema } from '@/lib/schemas'
 export const ConversationSchema = z.object({
   id: z.string().catch(''),
   title: z.string().catch(''),
+  departmentId: z.string().nullable().catch(null),
   createdAt: z.string().catch(''),
   updatedAt: z.string().catch(''),
 }) satisfies z.ZodType<z.input<typeof conversationResponseSchema>>
@@ -41,7 +42,10 @@ export type PaginatedMessages = z.infer<typeof PaginatedMessagesSchema>
 export const ListMessagesRequestSchema = messagesQuerySchema
 export type ListMessagesParams = z.input<typeof ListMessagesRequestSchema>
 
-export const CreateConversationRequestSchema = createConversationRequestSchema
+// shared allows a null department; a new chat on the FE must pick one
+export const CreateConversationRequestSchema = createConversationRequestSchema.extend({
+  departmentId: z.uuid(),
+})
 export type CreateConversationRequest = z.infer<typeof CreateConversationRequestSchema>
 
 export const UpdateConversationRequestSchema = updateConversationRequestSchema

@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { DocumentList, DocumentListSkeleton } from '@/features/documents/components/DocumentList'
-import { DocumentUploadButton } from '@/features/documents/components/DocumentUploadButton'
+import { DocumentUploadDialog } from '@/features/documents/components/DocumentUploadDialog'
 
 export function DocumentsPage() {
   return (
@@ -10,7 +10,7 @@ export function DocumentsPage() {
           <h1 className="text-xl font-semibold">Documents</h1>
           <p className="text-sm text-muted-foreground">PDF, DOCX or text files, up to 25MB.</p>
         </div>
-        <DocumentUploadButton />
+        <DocumentUploadDialog />
       </div>
       {/* DocumentList reads URL search params, which needs a Suspense boundary */}
       <Suspense fallback={<DocumentListSkeleton />}>

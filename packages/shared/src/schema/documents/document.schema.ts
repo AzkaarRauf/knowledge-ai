@@ -1,22 +1,23 @@
 import z from 'zod'
 import { isoDateSchema } from '../common/date.schema.js'
 import { listQuerySchema, paginatedSchema } from '../common/pagination.schema.js'
-
-export const DOCUMENT_MAX_SIZE = 25 * 1024 * 1024 // 25mb
-export const DOCUMENT_MIME_TYPES = [
-    'application/pdf',
-    'text/plain',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-] as const
+import { DOCUMENT_MAX_SIZE, DOCUMENT_MIME_TYPES } from '../../constants/document.constants.js'
 
 export const documentSchema = z.object({
     id: z.uuid(),
     filename: z.string(),
     conversationId: z.uuid().nullable(),
+    department: z.object({ id: z.uuid(), name: z.string() }).nullable(),
     createdAt: isoDateSchema,
     updatedAt: isoDateSchema,
 })
 export type Document = z.infer<typeof documentSchema>
+
+export const uploadDocumentBodySchema = z.object({
+    // multipart can't carry null, so '' (what axios sends for null) means null
+    departmentId: z.preprocess((v) => (v === '' ? null : v), z.uuid().nullable()),
+})
+export type UploadDocumentBody = z.infer<typeof uploadDocumentBodySchema>
 
 export const uploadDocumentRequestSchema = z.object({
     file: z

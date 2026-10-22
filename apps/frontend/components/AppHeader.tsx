@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/', label: 'Home' },
   { href: '/chat', label: 'Chat' },
   { href: '/documents', label: 'Documents' },
+  { href: '/departments', label: 'Departments' },
 ] as const
 
 export function AppHeader() {

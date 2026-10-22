@@ -108,6 +108,7 @@ export function DocumentList() {
               <TableHeader>
                 <TableRow>
                   <SortableHead field="filename" label="Name" query={query} onSort={handleSort} />
+                  <TableHead>Department</TableHead>
                   <SortableHead field="createdAt" label="Uploaded" query={query} onSort={handleSort} />
                   <TableHead className="w-12">
                     <span className="sr-only">Actions</span>
@@ -118,6 +119,9 @@ export function DocumentList() {
                 {documents.map((document) => (
                   <TableRow key={document.id}>
                     <TableCell className="font-medium whitespace-normal break-all">{document.filename}</TableCell>
+                    <TableCell className={cn(!document.department && 'text-muted-foreground')}>
+                      {document.department?.name ?? 'None'}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{new Date(document.createdAt).toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                       <Tooltip>

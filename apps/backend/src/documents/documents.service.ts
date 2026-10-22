@@ -8,10 +8,14 @@ import { createHash, randomUUID } from 'node:crypto'
 import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
 import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
 import { EmbeddingService } from 'src/embedding/embedding.service.js'
-import { Document, Prisma } from 'src/generated/prisma/client.js'
+import { Prisma } from 'src/generated/prisma/client.js'
 import { join, sql } from 'src/generated/prisma/internal/prismaNamespace.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { S3Service } from 'src/s3/s3.service.js'
+
+// every document response carries its department
+const documentInclude = { department: { select: { id: true, name: true } } } satisfies Prisma.DocumentInclude
+type Document = Prisma.DocumentGetPayload<{ include: typeof documentInclude }>
 
 @Injectable()
 export class DocumentsService {
@@ -23,12 +27,16 @@ export class DocumentsService {
         private embeddingService: EmbeddingService,
     ) {}
 
-    async upload({ file, userId }: { file: Express.Multer.File; userId: string }): Promise<{
+    async upload(args: { file: Express.Multer.File; userId: string; departmentId: string | null }): Promise<{
         document: Document
         isNew: boolean
     }> {
+        const { file, userId, departmentId } = args
         const fileHash = createHash('sha256').update(file.buffer).digest('hex')
-        const existingDocument = await this.db.document.findFirst({ where: { fileHash, userId } })
+        const existingDocument = await this.db.document.findFirst({
+            where: { fileHash, userId, departmentId },
+            include: documentInclude,
+        })
         if (existingDocument) {
             return { document: existingDocument, isNew: false }
         }
@@ -75,7 +83,8 @@ export class DocumentsService {
         const document = await safe(
             this.db.$transaction(async (tx) => {
                 const document = await tx.document.create({
-                    data: { fileHash, filename: file.originalname, s3key: key, userId },
+                    data: { fileHash, filename: file.originalname, s3key: key, userId, departmentId },
+                    include: documentInclude,
                 })
                 const rows = split.map(
                     (item, i) =>
@@ -126,6 +135,7 @@ export class DocumentsService {
         const [data, total] = await this.db.$transaction([
             this.db.document.findMany({
                 where,
+                include: documentInclude,
                 // id as tie-breaker so pages stay stable when sort values repeat
                 orderBy: [{ [sortBy]: sortOrder }, { id: 'asc' }],
                 ...toPrismaPagination(query),
@@ -137,7 +147,7 @@ export class DocumentsService {
 
     // throws P2025 (404) if document is missing or not owned by user
     findOne(id: string, userId: string): Promise<Document> {
-        return this.db.document.findUniqueOrThrow({ where: { id, userId } })
+        return this.db.document.findUniqueOrThrow({ where: { id, userId }, include: documentInclude })
     }
 
     async remove(id: string, userId: string) {

@@ -1,3 +1,4 @@
+import { createDepartmentRequestSchema, updateDepartmentRequestSchema } from 'shared'
 import { z } from 'zod'
 
 export const DepartmentSchema = z.object({
@@ -14,3 +15,13 @@ export const PublicDepartmentSchema = DepartmentSchema.pick({ id: true, name: tr
 export type PublicDepartment = z.infer<typeof PublicDepartmentSchema>
 
 export const PublicDepartmentListSchema = z.array(PublicDepartmentSchema).catch([])
+
+export const CreateDepartmentRequestSchema = createDepartmentRequestSchema
+export type CreateDepartmentRequest = z.infer<typeof CreateDepartmentRequestSchema>
+
+export const UpdateDepartmentRequestSchema = updateDepartmentRequestSchema
+export type UpdateDepartmentRequest = z.infer<typeof UpdateDepartmentRequestSchema>
+
+/** Create and edit forms share one shape: just the name. */
+export const DepartmentFormSchema = createDepartmentRequestSchema
+export type DepartmentFormInput = z.input<typeof DepartmentFormSchema>

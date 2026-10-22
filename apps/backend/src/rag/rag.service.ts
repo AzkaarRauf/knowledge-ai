@@ -21,8 +21,12 @@ export class RAGService {
             SELECT c."id", c."content", c."metadata", c."embedding" <=> ${vector}::vector AS "distance"
             FROM "DocumentChunk" c
             JOIN "Document" d ON d."id" = c."documentId"
+            JOIN "Conversation" conv ON conv."id" = ${conversationId}::uuid
             WHERE
-                (d."conversationId" IS NULL OR d."conversationId" = ${conversationId}::uuid)
+                (d."conversationId" IS NULL OR d."conversationId" = conv."id")
+                AND
+                -- docs with no department are shared with every department
+                (d."departmentId" IS NULL OR d."departmentId" = conv."departmentId")
                 AND
                 (c."embedding" <=> ${vector}::vector < ${maxDistance})
             ORDER BY "distance"

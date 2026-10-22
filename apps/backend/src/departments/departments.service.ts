@@ -13,7 +13,6 @@ export class DepartmentsService {
     constructor(private db: PrismaService) {}
 
     async create(createDepartmentDto: CreateDepartmentDto): Promise<DepartmentResponseDto> {
-        await this.assertNameAvailable(createDepartmentDto.name)
         return this.db.department.create({ data: createDepartmentDto })
     }
 

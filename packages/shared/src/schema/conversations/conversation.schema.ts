@@ -4,12 +4,14 @@ import { listQuerySchema, paginatedSchema } from '../common/pagination.schema.js
 
 export const createConversationRequestSchema = z.object({
     title: z.string().nonempty().optional(),
+    departmentId: z.uuid().nullable(),
 })
 export type CreateConversationRequest = z.infer<typeof createConversationRequestSchema>
 
 export const conversationResponseSchema = z.object({
     id: z.uuid(),
     title: z.string(),
+    departmentId: z.uuid().nullable(),
     createdAt: isoDateSchema,
     updatedAt: isoDateSchema,
 })

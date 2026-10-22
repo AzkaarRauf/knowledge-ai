@@ -4,9 +4,9 @@ import {
   type ListDocumentsParams,
   ListDocumentsRequestSchema,
   PaginatedDocumentsSchema,
+  type UploadDocumentRequest,
   UploadDocumentRequestSchema,
 } from '@/features/documents/schemas'
-import { type UploadDocumentRequest } from 'shared'
 
 export async function getDocuments(params: ListDocumentsParams = {}) {
   // axios sends Date params as ISO strings

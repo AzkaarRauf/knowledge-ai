@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 import { FieldShell } from './FieldShell'
 import { formatFieldErrors, readOnlyClassName } from './field-utils'
 
-export type SelectOption = { value: string; label: string }
+/** A `null` value is a pickable "none" item, e.g. "No department". */
+export type SelectOption = { value: string | null; label: string }
 
 type SelectFieldProps = {
   label: string
@@ -47,7 +48,7 @@ export function SelectField({ label, options, placeholder, description, required
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value ?? ''} value={option.value}>
               {option.label}
             </SelectItem>
           ))}

@@ -1,4 +1,5 @@
 export { CheckboxField } from './CheckboxField'
+export { FileField } from './FileField'
 export { SelectField, type SelectOption } from './SelectField'
 export { SubscribeButton } from './SubscribeButton'
 export { TextareaField } from './TextareaField'

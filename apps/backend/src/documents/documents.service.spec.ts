@@ -41,7 +41,10 @@ describe('DocumentsService', () => {
         it('returns the existing document without embedding when the file was uploaded before', async () => {
             db.document.findFirst.mockResolvedValue(document)
 
-            await expect(service.upload({ file: txtFile('hello'), userId })).resolves.toEqual({ document, isNew: false })
+            await expect(service.upload({ file: txtFile('hello'), userId, departmentId: null })).resolves.toEqual({
+                document,
+                isNew: false,
+            })
             expect(embeddingService.embedDocuments).not.toHaveBeenCalled()
             expect(s3Service.upload).not.toHaveBeenCalled()
         })
@@ -52,7 +55,10 @@ describe('DocumentsService', () => {
             s3Service.generateKey.mockReturnValue('admin/notes.txt')
             tx.document.create.mockResolvedValue(document)
 
-            await expect(service.upload({ file: txtFile('hello world'), userId })).resolves.toEqual({ document, isNew: true })
+            await expect(service.upload({ file: txtFile('hello world'), userId, departmentId: null })).resolves.toEqual({
+                document,
+                isNew: true,
+            })
 
             const [chunks] = embeddingService.embedDocuments.mock.calls[0]
             expect(chunks.map((c: { pageContent: string }) => c.pageContent)).toEqual(['hello world'])
@@ -67,7 +73,7 @@ describe('DocumentsService', () => {
             s3Service.delete.mockResolvedValue(undefined)
             tx.document.create.mockRejectedValue(new Error('db down'))
 
-            await expect(service.upload({ file: txtFile('hello world'), userId })).rejects.toThrow('db down')
+            await expect(service.upload({ file: txtFile('hello world'), userId, departmentId: null })).rejects.toThrow('db down')
             expect(s3Service.delete).toHaveBeenCalledWith('admin/notes.txt')
         })
     })

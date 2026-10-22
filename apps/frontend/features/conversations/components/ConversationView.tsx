@@ -1,16 +1,17 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { MessageSquareOff, RotateCcw } from 'lucide-react'
+import { Building2, MessageSquareOff, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
-import { chatReplyQueryOptions, messagesQueryOptions } from '@/features/conversations/api/queries'
+import { chatReplyQueryOptions, conversationQueryOptions, messagesQueryOptions } from '@/features/conversations/api/queries'
 import { ChatComposer } from '@/features/conversations/components/ChatComposer'
 import { ChatMessage } from '@/features/conversations/components/ChatMessage'
 import { clearPendingReply, getPendingReply } from '@/features/conversations/pending-prompt'
+import { publicDepartmentsQueryOptions } from '@/features/departments/api/queries'
 
 export function ConversationView({ conversationId }: { conversationId: string }) {
   const queryClient = useQueryClient()
@@ -102,10 +103,29 @@ export function ConversationView({ conversationId }: { conversationId: string })
           </div>
         )}
       </div>
-      <div className="mx-auto w-full max-w-3xl px-4 pb-4">
+      <div className="relative mx-auto w-full max-w-3xl px-4 pb-4">
         <ChatComposer onSend={handleSend} disabled={isReplying || isPending} autoFocus />
+        <ConversationDepartment conversationId={conversationId} />
         <p className="mt-2 text-center text-xs text-muted-foreground">Answers come from your documents only.</p>
       </div>
+    </div>
+  )
+}
+
+/** Pill naming the department this chat searches in. Absolute, so it sits on the footnote line without taking space. */
+function ConversationDepartment({ conversationId }: { conversationId: string }) {
+  const { data: conversation, isPending: conversationPending } = useQuery(conversationQueryOptions(conversationId))
+  const { data: departments = [], isPending: departmentsPending } = useQuery(publicDepartmentsQueryOptions())
+
+  if (conversationPending || departmentsPending) {
+    return <Skeleton role="status" aria-label="Loading department" className="absolute bottom-4 left-4 h-5 w-32 rounded-full" />
+  }
+
+  const department = departments.find((d) => d.id === conversation?.departmentId)
+  return (
+    <div className="absolute bottom-4 left-4 inline-flex h-5 items-center gap-1.5 rounded-full border bg-muted px-2.5 text-xs text-muted-foreground">
+      <Building2 className="size-3.5" />
+      {department ? department.name : 'No department'}
     </div>
   )
 }

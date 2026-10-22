@@ -1,4 +1,5 @@
 import {
+    Body,
     Controller,
     Delete,
     FileTypeValidator,
@@ -26,6 +27,7 @@ import { DocumentResponseDto } from './dto/document-response.dto.js'
 import { ListDocumentsQueryDto } from './dto/list-documents-query.dto.js'
 import { PaginatedDocumentsResponseDto } from './dto/paginated-documents-response.dto.js'
 import { UploadDocumentDto } from './dto/upload-document.dto.js'
+import { UploadDocumentBodyDto } from './dto/upload-document-body.dto.js'
 
 @ApiBearerAuth()
 @Controller('documents')
@@ -55,8 +57,9 @@ export class DocumentsController {
         file: Express.Multer.File,
         @JwtPayload() { userId }: JwtPayloadDto,
         @Res({ passthrough: true }) res: Response,
+        @Body() { departmentId }: UploadDocumentBodyDto,
     ) {
-        const { document, isNew } = await this.documentsService.upload({ file, userId })
+        const { document, isNew } = await this.documentsService.upload({ file, userId, departmentId })
         if (!isNew) res.status(HttpStatus.OK)
         return document
     }

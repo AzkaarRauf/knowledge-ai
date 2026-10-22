@@ -14,7 +14,8 @@ Field components live in `components/form/`, built on the shadcn (Base UI) input
 | `TextField`     | `string`   | `type` (`text`, `email`, `password`, `date`, …), `copyable`, `placeholder`, `required` (asterisk), `maxLength`, `autoComplete`, `description` |
 | `TextareaField` | `string`   | `rows`                                                                                                                      |
 | `CheckboxField` | `boolean`  | `description` for sub-text                                                                                                  |
-| `SelectField`   | `string \| null` | `options` (`{ value, label }[]`), `placeholder`, `required`, `description`; `''` and `null` both show the placeholder |
+| `SelectField`   | `string \| null` | `options` (`{ value, label }[]`; `value: null` = a pickable "none" item), `placeholder`, `required`, `description`; `''` and `null` both show the placeholder |
+| `FileField`     | `File \| null` | `accept`, `required`, `description`; uncontrolled, so `form.reset()` needs the form to remount to clear the picked file |
 
 Form component (`form.X` inside `<form.AppForm>`): `SubscribeButton` (`label`, `submittingLabel`, `className`). Read-only display outside a form: `TextFieldView` (not registered).
 
