@@ -26,7 +26,7 @@ export class RAGService {
                 AND
                 (c."embedding" <=> ${vector}::vector < ${maxDistance})
             ORDER BY "distance"
-            LIMIT 5`
+            LIMIT 20`
         return chunks
     }
 }
