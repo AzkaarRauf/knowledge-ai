@@ -28,7 +28,10 @@ import { MessagesResponseDto } from './dto/messages-response.dto.js'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { ChatRequestDto } from './dto/chat-request.dto.js'
 import { type Response } from 'express'
+import { UseRoles } from 'src/role/use-roles.decorator.js'
+import { Role } from 'src/generated/prisma/enums.js'
 
+@UseRoles({ roles: [Role.USER] })
 @ApiBearerAuth()
 @Controller('conversations')
 export class ConversationsController {

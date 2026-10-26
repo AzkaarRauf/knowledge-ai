@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Suspense } from 'react'
 import { LogoutButton } from '@/features/auth/components/logout-button'
+import { useRole } from '@/features/auth/hooks/role.hook'
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -12,12 +13,12 @@ import {
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu'
 
-// add new modules here to show them in the nav bar
+// add new modules here to show them in the nav bar; adminOnly items are hidden for other roles
 const NAV_ITEMS = [
   { href: '/', label: 'Home' },
   { href: '/chat', label: 'Chat' },
-  { href: '/documents', label: 'Documents' },
-  { href: '/departments', label: 'Departments' },
+  { href: '/documents', label: 'Documents', adminOnly: true },
+  { href: '/departments', label: 'Departments', adminOnly: true },
 ] as const
 
 export function AppHeader() {
@@ -44,6 +45,8 @@ function ActiveNavLinks() {
 }
 
 function NavLinks({ pathname }: { pathname: string | null }) {
+  const { isAdmin } = useRole()
+  const items = NAV_ITEMS.filter((item) => !('adminOnly' in item) || isAdmin)
   // root only matches itself; other items also match their nested routes
   const isActive = (href: string) =>
     pathname !== null && (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`))
@@ -51,7 +54,7 @@ function NavLinks({ pathname }: { pathname: string | null }) {
   return (
     <NavigationMenu>
       <NavigationMenuList className="gap-1">
-        {NAV_ITEMS.map((item) => (
+        {items.map((item) => (
           <NavigationMenuItem key={item.href}>
             <NavigationMenuLink
               active={isActive(item.href)}

@@ -1,10 +1,5 @@
 'use client'
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, ArrowUpDown, FileText, SearchX, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
-import { DOCUMENT_SORT_FIELDS, isError, safe } from 'shared'
 import { ConfirmationDialog } from '@/components/ConfirmationDialog'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -19,15 +14,18 @@ import { useDocumentListParams } from '@/features/documents/hooks/useDocumentLis
 import { type Document, type ListDocumentsQuery } from '@/features/documents/schemas'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowDown, ArrowUp, ArrowUpDown, FileText, SearchX, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { DOCUMENT_SORT_FIELDS, isError, safe } from 'shared'
+import { toast } from 'sonner'
 
 type SortField = (typeof DOCUMENT_SORT_FIELDS)[number]
 
 export function DocumentList() {
   const { params, query, hrefFor, setParams } = useDocumentListParams()
-  // keep showing the current page while the next one loads, instead of flashing skeletons
-  const { data, isPending, isPlaceholderData } = useQuery({
+  const { data, isPending } = useQuery({
     ...documentsQueryOptions(params),
-    placeholderData: keepPreviousData,
   })
   const documents = data?.data ?? []
   const totalPages = data?.meta.totalPages ?? 0
@@ -38,10 +36,10 @@ export function DocumentList() {
 
   // deleting the last row of the last page leaves us past the end, so step back
   useEffect(() => {
-    if (!isPlaceholderData && totalPages > 0 && query.page > totalPages) {
+    if (totalPages > 0 && query.page > totalPages) {
       setParams({ page: totalPages === 1 ? undefined : totalPages }, { replace: true })
     }
-  }, [isPlaceholderData, totalPages, query.page, setParams])
+  }, [totalPages, query.page, setParams])
 
   async function handleDeleteConfirm() {
     if (!documentToDelete) return
@@ -100,10 +98,7 @@ export function DocumentList() {
         )
       ) : (
         <>
-          <div
-            aria-busy={isPlaceholderData}
-            className={cn('rounded-lg border bg-card transition-opacity', isPlaceholderData && 'opacity-60')}
-          >
+          <div className={cn('rounded-lg border bg-card transition-opacity')}>
             <Table>
               <TableHeader>
                 <TableRow>

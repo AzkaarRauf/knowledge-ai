@@ -20,6 +20,7 @@ import { ConversationsModule } from './conversations/conversations.module.js'
 import { EmbeddingModule } from './embedding/embedding.module.js'
 import { LLMModule } from './llm/llm.module.js'
 import { RAGModule } from './rag/rag.module.js'
+import { RoleGuard } from 'src/role/role.guard.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -76,6 +77,10 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         {
             provide: APP_GUARD,
             useClass: AuthGuard,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: RoleGuard,
         },
     ],
 })

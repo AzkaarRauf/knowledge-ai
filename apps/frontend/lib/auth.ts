@@ -12,6 +12,39 @@ export function getAccessToken() {
 
 export function setAccessToken(token: string | null) {
   accessToken = token || null
+  tokenListeners.forEach((listener) => listener())
+}
+
+// lets React re-render when the token changes (see useRole)
+const tokenListeners = new Set<() => void>()
+
+export function subscribeAccessToken(listener: () => void) {
+  tokenListeners.add(listener)
+  return () => {
+    tokenListeners.delete(listener)
+  }
+}
+
+export const ROLES = ['ADMIN', 'USER'] as const
+export type Role = (typeof ROLES)[number]
+
+const AccessTokenPayloadSchema = z.object({
+  role: z.enum(ROLES).nullable().catch(null),
+})
+
+/**
+ * Reads the role from the access token payload. Only for showing/hiding UI; the backend
+ * still checks the role on every request.
+ */
+export function getRole(): Role | null {
+  const payload = accessToken?.split('.')[1]
+  if (!payload) return null
+  try {
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return AccessTokenPayloadSchema.parse(JSON.parse(json)).role
+  } catch {
+    return null
+  }
 }
 
 export function authHeaders(): Record<string, string> {
@@ -29,7 +62,6 @@ export const HOME_ROUTE = '/'
  */
 export function redirectToLogin() {
   if (typeof window === 'undefined' || window.location.pathname.startsWith('/auth/')) return
-  // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- no router outside React
   window.location.assign(LOGIN_ROUTE)
 }
 

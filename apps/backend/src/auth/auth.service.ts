@@ -37,6 +37,7 @@ export class AuthService {
             departmentId: user.department.id,
             email: user.email,
             userId: user.id,
+            role: user.role,
         })
 
         const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
@@ -69,6 +70,7 @@ export class AuthService {
             departmentId: user.department.id,
             email: user.email,
             userId: user.id,
+            role: user.role,
         })
 
         const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
@@ -100,6 +102,7 @@ export class AuthService {
             departmentId: oldToken.user.departmentId,
             email: oldToken.user.email,
             userId: oldToken.userId,
+            role: oldToken.user.role,
         })
         this.setRefreshToken(res, newToken.token)
         this.setAccessToken(res, accessToken)

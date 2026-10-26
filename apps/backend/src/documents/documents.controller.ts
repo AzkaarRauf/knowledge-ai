@@ -28,7 +28,10 @@ import { ListDocumentsQueryDto } from './dto/list-documents-query.dto.js'
 import { PaginatedDocumentsResponseDto } from './dto/paginated-documents-response.dto.js'
 import { UploadDocumentDto } from './dto/upload-document.dto.js'
 import { UploadDocumentBodyDto } from './dto/upload-document-body.dto.js'
+import { UseRoles } from 'src/role/use-roles.decorator.js'
+import { Role } from 'src/generated/prisma/enums.js'
 
+@UseRoles({ roles: [Role.ADMIN] })
 @ApiBearerAuth()
 @Controller('documents')
 export class DocumentsController {

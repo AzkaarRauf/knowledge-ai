@@ -1,6 +1,6 @@
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { env } from '../src/env.js'
-import { PrismaClient } from '../src/generated/prisma/client.js'
+import { PrismaClient, Role } from '../src/generated/prisma/client.js'
 import { UserCreateInput } from '../src/generated/prisma/models.js'
 import { HashingService } from '../src/hashing/hashing.service.js'
 
@@ -19,6 +19,7 @@ async function seed() {
         email,
         name,
         password,
+        role: Role.ADMIN,
         department: {
             connectOrCreate: { where: { name }, create: { name } },
         },
