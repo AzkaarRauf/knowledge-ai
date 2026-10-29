@@ -3,6 +3,19 @@ import { HashingService } from 'src/hashing/hashing.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { CreateUserDto } from './dto/create-user.dto.js'
 import { UpdateUserDto } from './dto/update-user.dto.js'
+import { UserResponseDto } from './dto/user-response.dto.js'
+
+// never select the password hash
+const userSelect = {
+    id: true,
+    name: true,
+    email: true,
+    role: true,
+    departmentId: true,
+    department: { select: { id: true, name: true } },
+    createdAt: true,
+    updatedAt: true,
+} as const
 
 @Injectable()
 export class UsersService {
@@ -11,27 +24,20 @@ export class UsersService {
         private hashingService: HashingService,
     ) {}
 
-    async create(createUserDto: CreateUserDto) {
-        createUserDto.password = await this.hashingService.hash(createUserDto.password)
-        const user = await this.db.user.create({ data: createUserDto })
-        return user
+    async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
+        const password = await this.hashingService.hash(createUserDto.password)
+        return this.db.user.create({ data: { ...createUserDto, password }, select: userSelect })
     }
 
-    async findAll() {
-        const users = await this.db.user.findMany()
-        return users
+    findAll(): Promise<UserResponseDto[]> {
+        return this.db.user.findMany({ select: userSelect, orderBy: { name: 'asc' } })
     }
 
-    async findOne(id: string) {
-        const user = await this.db.user.findFirstOrThrow({ where: { id } })
-        return user
+    findOne(id: string): Promise<UserResponseDto> {
+        return this.db.user.findUniqueOrThrow({ where: { id }, select: userSelect })
     }
 
-    update(id: number, _updateUserDto: UpdateUserDto) {
-        return `This action updates a #${id} user`
-    }
-
-    remove(id: number) {
-        return `This action removes a #${id} user`
+    async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+        return this.db.user.update({ where: { id }, data: updateUserDto, select: userSelect })
     }
 }

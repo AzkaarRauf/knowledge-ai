@@ -1,6 +1,4 @@
 import { createZodDto } from 'nestjs-zod'
-import { createUserSchema } from './create-user.dto.js'
+import { updateUserRequestSchema } from 'shared'
 
-export const updateUserSchema = createUserSchema.partial()
-
-export class UpdateUserDto extends createZodDto(updateUserSchema) {}
+export class UpdateUserDto extends createZodDto(updateUserRequestSchema) {}

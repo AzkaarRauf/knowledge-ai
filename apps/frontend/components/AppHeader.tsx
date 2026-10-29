@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/chat', label: 'Chat' },
   { href: '/documents', label: 'Documents', adminOnly: true },
   { href: '/departments', label: 'Departments', adminOnly: true },
+  { href: '/users', label: 'Users', adminOnly: true },
 ] as const
 
 const PUBLIC_NAV_ITEMS = NAV_ITEMS.filter((item) => !('adminOnly' in item))
