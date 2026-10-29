@@ -8,11 +8,20 @@ import { LoginRequestDto } from './dtos/login.dto.js'
 import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
 import { RegisterResponseDto } from './dtos/register-response.dto.js'
 import { RegisterUserDto } from './dtos/register-user.dto.js'
+import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
+import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
 
 @SkipAuth()
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
+
+    @SkipAuth(false)
+    @Get('credentials')
+    @ZodResponse({ type: JwtPayloadDto, status: 200 })
+    credentials(@JwtPayload() payload: JwtPayloadDto) {
+        return payload
+    }
 
     @Post('register')
     @ZodResponse({ type: RegisterResponseDto, status: 200 })

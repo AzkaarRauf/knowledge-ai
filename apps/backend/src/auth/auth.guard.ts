@@ -3,8 +3,8 @@ import { Reflector } from '@nestjs/core'
 import { getRequestCookie } from '@nestjs/core/helpers/cookies/request-cookies.js'
 import { JwtService } from '@nestjs/jwt'
 import { Request } from 'express'
-import { ACCESS_TOKEN_COOKIE_NAME, isError, safe } from 'shared'
-import { JwtPayloadDto, jwtPayloadSchema } from 'src/common/dtos/jwt-payload.dto.js'
+import { ACCESS_TOKEN_COOKIE_NAME, isError, jwtPayloadSchema, safe } from 'shared'
+import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
 import { SkipAuth } from 'src/decorators/skip-auth/skip-auth.decorator.js'
 
 declare global {

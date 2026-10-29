@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "oxlint --type-aware .",
+    "lint": "oxlint --type-aware . --fix",
+    "typecheck": "tsc --noEmit",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },

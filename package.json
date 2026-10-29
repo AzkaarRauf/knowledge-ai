@@ -6,6 +6,8 @@
     "scripts": {
         "dev": "pnpm -r --parallel dev",
         "lint": "pnpm -r --parallel lint",
+        "typecheck": "pnpm -r --parallel typecheck",
+        "check": "pnpm run \"/^(typecheck|lint)$/\"",
         "be": "pnpm --filter backend",
         "fe": "pnpm --filter frontend",
         "shared": "pnpm --filter shared",

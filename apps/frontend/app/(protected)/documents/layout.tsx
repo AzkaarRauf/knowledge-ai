@@ -1,5 +1,5 @@
-import { AdminOnly } from '@/features/auth/components/admin-only'
+import { AdminGate } from '@/features/auth/components/admin-gate'
 
 export default function DocumentsLayout({ children }: LayoutProps<'/documents'>) {
-  return <AdminOnly>{children}</AdminOnly>
+  return <AdminGate>{children}</AdminGate>
 }

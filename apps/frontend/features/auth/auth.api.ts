@@ -1,6 +1,6 @@
 import { api } from '@/lib/api-client'
-import { type LoginResponse, type LoginRequest, RegisterRequest, RegisterResponse } from 'shared'
-import { LoginResponseSchema, RegisterResponseSchema } from './auth.schema'
+import { type LoginRequest, type LoginResponse, RegisterRequest, RegisterResponse } from 'shared'
+import { CredentialsResponseSchema, LoginResponseSchema, RegisterResponseSchema } from './auth.schema'
 
 export async function login(body: LoginRequest): Promise<LoginResponse> {
   const res = await api.post('/auth/login', body)
@@ -16,4 +16,10 @@ export async function register(body: RegisterRequest): Promise<RegisterResponse>
 
 export async function logout() {
   await api.delete('/auth/logout')
+}
+
+export async function getCredentials() {
+  const res = await api.get('/auth/credentials')
+  const data = CredentialsResponseSchema.parse(res.data)
+  return data
 }

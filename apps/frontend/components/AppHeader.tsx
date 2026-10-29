@@ -1,17 +1,8 @@
-'use client'
-
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { Suspense } from 'react'
+import { NavLinks } from '@/components/NavLinks'
 import { LogoutButton } from '@/features/auth/components/logout-button'
-import { useRole } from '@/features/auth/hooks/role.hook'
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu'
+import { getCredentials } from '@/features/auth/auth.server'
 
 // add new modules here to show them in the nav bar; adminOnly items are hidden for other roles
 const NAV_ITEMS = [
@@ -21,6 +12,8 @@ const NAV_ITEMS = [
   { href: '/departments', label: 'Departments', adminOnly: true },
 ] as const
 
+const PUBLIC_NAV_ITEMS = NAV_ITEMS.filter((item) => !('adminOnly' in item))
+
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 h-14 border-b bg-background">
@@ -29,9 +22,9 @@ export function AppHeader() {
           <Link href="/" className="font-semibold">
             Knowledge AI
           </Link>
-          {/* usePathname on a dynamic route needs a Suspense boundary; fallback is the nav with nothing active */}
-          <Suspense fallback={<NavLinks pathname={null} />}>
-            <ActiveNavLinks />
+          {/* reading the cookie is request-time, so it streams in behind Suspense; fallback shows links every role has */}
+          <Suspense fallback={<NavLinks items={PUBLIC_NAV_ITEMS} />}>
+            <RoleNavLinks />
           </Suspense>
         </div>
         <LogoutButton />
@@ -40,32 +33,15 @@ export function AppHeader() {
   )
 }
 
-function ActiveNavLinks() {
-  return <NavLinks pathname={usePathname()} />
-}
-
-function NavLinks({ pathname }: { pathname: string | null }) {
-  const { isAdmin } = useRole()
+async function RoleNavLinks() {
+  const credentials = await getCredentials()
+  const isAdmin = credentials?.role === 'ADMIN'
   const items = NAV_ITEMS.filter((item) => !('adminOnly' in item) || isAdmin)
-  // root only matches itself; other items also match their nested routes
-  const isActive = (href: string) =>
-    pathname !== null && (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`))
 
   return (
-    <NavigationMenu>
-      <NavigationMenuList className="gap-1">
-        {items.map((item) => (
-          <NavigationMenuItem key={item.href}>
-            <NavigationMenuLink
-              active={isActive(item.href)}
-              className={navigationMenuTriggerStyle()}
-              render={<Link href={item.href} />}
-            >
-              {item.label}
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-        ))}
-      </NavigationMenuList>
-    </NavigationMenu>
+    // usePathname on a dynamic route needs a Suspense boundary; fallback is the nav with nothing active
+    <Suspense fallback={<NavLinks items={items} />}>
+      <NavLinks items={items} highlightActive />
+    </Suspense>
   )
 }

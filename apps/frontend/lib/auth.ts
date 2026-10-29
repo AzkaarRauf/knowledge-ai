@@ -3,18 +3,6 @@ import axios from 'axios'
 import { RefreshTokenResponse } from 'shared'
 import { z } from 'zod'
 
-// Access token lives in memory only; the httpOnly refresh cookie restores it after a reload.
-let accessToken: string | null = null
-
-export function getAccessToken() {
-  return accessToken
-}
-
-export function setAccessToken(token: string | null) {
-  accessToken = token || null
-  tokenListeners.forEach((listener) => listener())
-}
-
 // lets React re-render when the token changes (see useRole)
 const tokenListeners = new Set<() => void>()
 
@@ -27,29 +15,6 @@ export function subscribeAccessToken(listener: () => void) {
 
 export const ROLES = ['ADMIN', 'USER'] as const
 export type Role = (typeof ROLES)[number]
-
-const AccessTokenPayloadSchema = z.object({
-  role: z.enum(ROLES).nullable().catch(null),
-})
-
-/**
- * Reads the role from the access token payload. Only for showing/hiding UI; the backend
- * still checks the role on every request.
- */
-export function getRole(): Role | null {
-  const payload = accessToken?.split('.')[1]
-  if (!payload) return null
-  try {
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-    return AccessTokenPayloadSchema.parse(JSON.parse(json)).role
-  } catch {
-    return null
-  }
-}
-
-export function authHeaders(): Record<string, string> {
-  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
-}
 
 export const REFRESH_TOKEN_PATH = '/auth/refresh-token'
 export const LOGIN_ROUTE = '/auth/login'
@@ -84,11 +49,9 @@ export function refreshAccessToken() {
     .then((res) => {
       const { token } = RefreshTokenResponseSchema.parse(res.data)
       if (!token) throw new Error('Refresh returned no token')
-      setAccessToken(token)
       return token
     })
     .catch((error: unknown) => {
-      setAccessToken(null)
       throw error
     })
     .finally(() => {

@@ -1,4 +1,5 @@
 import z from 'zod'
+import { jwtPayloadSchema } from './jwt-payload.schema.js'
 
 export const loginRequestSchema = z.object({
     email: z.string().trim().pipe(z.email('Invalid email')),
@@ -17,6 +18,7 @@ export const loginResponseSchema = z.object({
         }),
     }),
     token: z.jwt(),
+    credentials: jwtPayloadSchema,
 })
 
 export type LoginResponse = z.infer<typeof loginResponseSchema>

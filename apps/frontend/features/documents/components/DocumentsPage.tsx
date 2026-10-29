@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { DocumentList, DocumentListSkeleton } from '@/features/documents/components/DocumentList'
 import { DocumentUploadDialog } from '@/features/documents/components/DocumentUploadDialog'
 
+// admin check lives in app/(protected)/documents/layout.tsx
 export function DocumentsPage() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-4 p-6">

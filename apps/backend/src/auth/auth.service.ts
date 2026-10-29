@@ -4,7 +4,7 @@ import { Response } from 'express'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
 import { HashingService } from 'src/hashing/hashing.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
-import { ACCESS_TOKEN_DURATION, REFRESH_TOKEN_DURATION } from './auth.constants.js'
+import { REFRESH_TOKEN_DURATION } from './auth.constants.js'
 import { LoginResponseDto } from './dtos/login-response.dto.js'
 import { LoginRequestDto } from './dtos/login.dto.js'
 import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
@@ -33,19 +33,21 @@ export class AuthService {
             include: { department: true },
         })
 
-        const token = await this.generateAccessToken({
+        const jwtPayload: JwtPayloadDto = {
             departmentId: user.department.id,
             email: user.email,
             userId: user.id,
             role: user.role,
-        })
+        }
+
+        const token = await this.generateAccessToken(jwtPayload)
 
         const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
 
         this.setRefreshToken(res, newRefreshToken.token)
         this.setAccessToken(res, token)
 
-        const response: RegisterResponseDto = { user, token }
+        const response: RegisterResponseDto = { user, token, credentials: jwtPayload }
 
         return response
     }
@@ -66,19 +68,21 @@ export class AuthService {
         })
         if (!passwordsMatch) return throwError()
 
-        const token = await this.generateAccessToken({
+        const jwtPayload: JwtPayloadDto = {
             departmentId: user.department.id,
             email: user.email,
             userId: user.id,
             role: user.role,
-        })
+        }
+
+        const token = await this.generateAccessToken(jwtPayload)
 
         const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
 
         this.setRefreshToken(res, newRefreshToken.token)
         this.setAccessToken(res, token)
 
-        const response: LoginResponseDto = { user, token }
+        const response: LoginResponseDto = { user, token, credentials: jwtPayload }
 
         return response
     }
@@ -134,7 +138,9 @@ export class AuthService {
             secure: true,
             sameSite: true,
             httpOnly: true,
-            maxAge: ACCESS_TOKEN_DURATION,
+            // cookie lives as long as the refresh token so the frontend server can still read the role
+            // after the JWT expires; the JWT's own `exp` still limits API use to ACCESS_TOKEN_DURATION
+            maxAge: REFRESH_TOKEN_DURATION,
         })
     }
     private clearRefreshToken(res: Response) {
