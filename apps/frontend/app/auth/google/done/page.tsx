@@ -1,10 +1,6 @@
-import { redirect } from 'next/navigation'
-import { HOME_ROUTE } from '@/lib/auth'
+import { GoogleDoneRedirect } from '@/features/auth/components/google-done-redirect'
 
-/**
- * Backend sends the browser here after google login sets the cookies. The proxy already
- * redirects logged-in users home; this is a fallback.
- */
+/** Backend sends the browser here after google login sets the cookies. */
 export default function GoogleDonePage() {
-  redirect(HOME_ROUTE)
+  return <GoogleDoneRedirect />
 }
