@@ -45,6 +45,6 @@ export class AuthController {
     @UseFilters(GoogleOAuthErrorFilter)
     async googleCallback(@Req() req: Request, @Res() res: Response) {
         await this.authService.loginWithGoogle(req.user as GoogleUser, res)
-        res.redirect('http://localhost:3000/auth/google/done')
+        res.redirect('/auth/google/done')
     }
 }
