@@ -10,7 +10,7 @@ export function proxy(request: NextRequest) {
   const hasSession = request.cookies.has(REFRESH_TOKEN_COOKIE_NAME)
   const isAuthPage = request.nextUrl.pathname.startsWith(AUTH_PREFIX)
 
-  // Logged-in users have no reason to see login/register.
+  // Logged-in users have no reason to see login. This also sends /auth/google/done home.
   if (isAuthPage) {
     return hasSession ? NextResponse.redirect(new URL(HOME_ROUTE, request.url)) : NextResponse.next()
   }

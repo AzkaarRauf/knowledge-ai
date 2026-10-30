@@ -1,16 +1,14 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Response } from 'express'
+import { ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME, Role } from 'shared'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
-import { HashingService } from 'src/hashing/hashing.service.js'
+import { env } from 'src/env.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { REFRESH_TOKEN_DURATION } from './auth.constants.js'
-import { LoginResponseDto } from './dtos/login-response.dto.js'
-import { LoginRequestDto } from './dtos/login.dto.js'
 import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
-import { RegisterResponseDto } from './dtos/register-response.dto.js'
-import { RegisterUserDto } from './dtos/register-user.dto.js'
-import { ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME } from 'shared'
+import { GoogleUser } from './google/google.strategy.js'
+import { NotInvitedException } from './google/not-invited.exception.js'
 
 @Injectable()
 export class AuthService {
@@ -18,56 +16,38 @@ export class AuthService {
     private readonly accessTokenCookieName = ACCESS_TOKEN_COOKIE_NAME
     constructor(
         private db: PrismaService,
-        private hashingService: HashingService,
         private jwtService: JwtService,
     ) {}
 
-    async register(registerUserDto: RegisterUserDto, res: Response): Promise<RegisterResponseDto> {
-        const { password, ...dto } = registerUserDto
-        const existingUser = await this.db.user.findUnique({ where: { email: dto.email } })
-        if (existingUser) throw new ConflictException('Email is already registered')
+    async loginWithGoogle(googleUser: GoogleUser, res: Response) {
+        if (!googleUser.emailVerified) throw new NotInvitedException()
 
-        const hashedPassword = await this.hashingService.hash(password)
-        const user = await this.db.user.create({
-            data: { ...dto, password: hashedPassword },
-            include: { department: true },
+        const user = await this.db.user.findFirst({
+            where: {
+                OR: [
+                    { googleId: googleUser.googleId },
+                    { email: { equals: googleUser.email, mode: 'insensitive' }, googleId: null },
+                ],
+            },
+            include: { department: { select: { id: true, name: true } } },
         })
+        if (!user) throw new NotInvitedException()
 
-        const jwtPayload: JwtPayloadDto = {
-            departmentId: user.department.id,
-            email: user.email,
-            userId: user.id,
-            role: user.role,
+        // admins can use any email (e.g. gmail). everyone else must be from one of permitted workspace domains
+        if (user.role !== 'ADMIN') {
+            const domain = googleUser.hd?.toLowerCase()
+            if (!domain || !env.ALLOWED_DOMAINS.includes(domain)) throw new NotInvitedException()
         }
 
-        const token = await this.generateAccessToken(jwtPayload)
+        // first google login: link this google account to the invited user
+        if (user.googleId === null) {
+            await this.db.user.update({ where: { id: user.id }, data: { googleId: googleUser.googleId } })
+        }
 
-        const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
-
-        this.setRefreshToken(res, newRefreshToken.token)
-        this.setAccessToken(res, token)
-
-        const response: RegisterResponseDto = { user, token, credentials: jwtPayload }
-
-        return response
+        await this.issueSession(user, res)
     }
 
-    async login(loginDto: LoginRequestDto, res: Response): Promise<LoginResponseDto> {
-        const user = await this.db.user.findFirst({
-            where: { email: loginDto.email },
-            include: { department: true },
-        })
-        const throwError = () => {
-            throw new UnauthorizedException('Invalid email or password')
-        }
-        if (!user) return throwError()
-
-        const passwordsMatch = await this.hashingService.compare({
-            data: loginDto.password,
-            encrypted: user.password,
-        })
-        if (!passwordsMatch) return throwError()
-
+    private async issueSession(user: { email: string; id: string; role: Role; department: { id: string } }, res: Response) {
         const jwtPayload: JwtPayloadDto = {
             departmentId: user.department.id,
             email: user.email,
@@ -82,9 +62,7 @@ export class AuthService {
         this.setRefreshToken(res, newRefreshToken.token)
         this.setAccessToken(res, token)
 
-        const response: LoginResponseDto = { user, token, credentials: jwtPayload }
-
-        return response
+        return { token, credentials: jwtPayload }
     }
 
     async refreshToken(refreshToken: string, res: Response) {

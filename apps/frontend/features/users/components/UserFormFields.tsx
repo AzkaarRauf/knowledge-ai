@@ -18,7 +18,7 @@ export function setEmailTakenError(formApi: AnyFormApi, email: string) {
 export const USER_FORM_FIELDS = { name: 'name', email: 'email', departmentId: 'departmentId' } as const
 
 /**
- * Fields both create and edit have. Create adds password and role on its own.
+ * Fields both create and edit have. Create adds role on its own.
  * A field group, not `withForm`, because the two forms have different shapes.
  */
 export const UserFormFields = withFieldGroup({

@@ -1,6 +1,15 @@
 {
     "tab_size": 4,
     "lsp": {
+        // use the repo's TS (5.9.x) so editor errors match `pnpm typecheck`.
+        // TS 6+ misses unknown fields in Prisma `data` objects, so stay on 5.9 for now.
+        "vtsls": {
+            "settings": {
+                "typescript": {
+                    "tsdk": "apps/backend/node_modules/typescript/lib"
+                }
+            }
+        },
         "oxlint": {
             "initialization_options": {
                 "settings": {

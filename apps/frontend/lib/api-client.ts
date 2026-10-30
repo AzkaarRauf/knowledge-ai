@@ -5,8 +5,8 @@ import axios, { isAxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 export const api = axios.create({ baseURL: env.NEXT_PUBLIC_API_BASE_URL, withCredentials: true })
 
-// Login/register 401s are bad credentials, not an expired token.
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/logout', REFRESH_TOKEN_PATH]
+// 401s here mean no session at all, so refreshing won't help.
+const NO_REFRESH_PATHS = ['/auth/logout', REFRESH_TOKEN_PATH]
 
 // api.interceptors.request.use(async (config) => {
 //   for (const [key, value] of Object.entries(authHeaders())) config.headers.set(key, value)

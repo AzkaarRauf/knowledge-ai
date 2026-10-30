@@ -29,9 +29,7 @@ import { type CreateUserFormInput, CreateUserFormSchema, ROLE_OPTIONS } from '@/
 import { useAppForm } from '@/hooks/useAppForm'
 import { ApiValidationError, getErrorMessage } from '@/lib/errors'
 
-const PASSWORD_RULES = 'At least 8 characters, with upper and lower case letters, a number and a symbol.'
-
-const emptyUserForm: CreateUserFormInput = { name: '', email: '', password: '', departmentId: '', role: 'USER' }
+const emptyUserForm: CreateUserFormInput = { name: '', email: '', departmentId: '', role: 'USER' }
 
 export function CreateUserDialog() {
   const [open, setOpen] = useState(false)
@@ -83,13 +81,8 @@ function CreateUserForm({ onDone }: { onDone: () => void }) {
   return (
     <form onSubmit={handleFormSubmit} noValidate className="grid gap-4">
       <UserFormFields form={form} fields={USER_FORM_FIELDS} disabled={false} departmentOptions={departmentOptions} />
-      {/* password and role are set once here; they cannot be changed later */}
+      {/* role is set once here; it cannot be changed later */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <form.AppField name="password">
-          {(f) => (
-            <f.TextField label="Password" type="password" autoComplete="new-password" description={PASSWORD_RULES} required />
-          )}
-        </form.AppField>
         <form.AppField name="role">{(f) => <f.SelectField label="Role" options={ROLE_OPTIONS} required />}</form.AppField>
       </div>
 

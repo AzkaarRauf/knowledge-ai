@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { HashingService } from 'src/hashing/hashing.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { CreateUserDto } from './dto/create-user.dto.js'
 import { UpdateUserDto } from './dto/update-user.dto.js'
@@ -19,14 +18,10 @@ const userSelect = {
 
 @Injectable()
 export class UsersService {
-    constructor(
-        private db: PrismaService,
-        private hashingService: HashingService,
-    ) {}
+    constructor(private db: PrismaService) {}
 
     async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-        const password = await this.hashingService.hash(createUserDto.password)
-        return this.db.user.create({ data: { ...createUserDto, password }, select: userSelect })
+        return this.db.user.create({ data: createUserDto, select: userSelect })
     }
 
     findAll(): Promise<UserResponseDto[]> {

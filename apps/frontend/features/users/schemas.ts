@@ -31,6 +31,6 @@ export const roleLabel = (role: User['role']) => ROLE_OPTIONS.find((o) => o.valu
 export const CreateUserFormSchema = createUserRequestSchema
 export type CreateUserFormInput = z.input<typeof CreateUserFormSchema>
 
-/** Edit form: name, email and department only; password and role cannot change. */
+/** Edit form: name, email and department only; role cannot change. */
 export const EditUserFormSchema = updateUserRequestSchema.required()
 export type EditUserFormInput = z.input<typeof EditUserFormSchema>
