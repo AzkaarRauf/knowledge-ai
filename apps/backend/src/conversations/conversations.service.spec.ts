@@ -21,11 +21,11 @@ describe('ConversationsService', () => {
     let service: ConversationsService
     const db = {
         conversation: { findFirstOrThrow: vi.fn(), update: vi.fn() },
-        message: { findMany: vi.fn(), createMany: vi.fn() },
+        message: { createMany: vi.fn() },
         $transaction: vi.fn(),
     }
     const ragService = { retrieveDocumentChunks: vi.fn() }
-    const llmService = { toHistory: vi.fn(), stream: vi.fn() }
+    const llmService = { toHistory: vi.fn(), rewriteQuery: vi.fn(), stream: vi.fn() }
     const res = { setHeaders: vi.fn(), flushHeaders: vi.fn(), write: vi.fn(), end: vi.fn() }
 
     // everything written to the response, joined
@@ -52,13 +52,13 @@ describe('ConversationsService', () => {
         const history = [['user', 'old question']]
 
         beforeEach(() => {
-            db.conversation.findFirstOrThrow.mockResolvedValue({ id })
+            db.conversation.findFirstOrThrow.mockResolvedValue({ messages: [{ role: 'user', content: 'old question' }] })
             ragService.retrieveDocumentChunks.mockResolvedValue([
                 { id: 'c1', content: 'chunk one', metadata: {}, score: 0.03 },
-                { id: 'c2', content: 'chunk two', metadata: {}, score: 0.02 },
+                { id: 'c2', content: 'chunk two', metadata: { source: 'a.pdf' }, score: 0.02 },
             ])
-            db.message.findMany.mockResolvedValue([{ role: 'user', content: 'old question' }])
             llmService.toHistory.mockReturnValue(history)
+            llmService.rewriteQuery.mockResolvedValue('standalone x?')
             db.$transaction.mockResolvedValue([])
         })
 
@@ -66,35 +66,44 @@ describe('ConversationsService', () => {
             db.conversation.findFirstOrThrow.mockRejectedValue(new Error('P2025'))
 
             await expect(chat()).rejects.toThrow('P2025')
-            expect(db.conversation.findFirstOrThrow).toHaveBeenCalledWith({ where: { id, userId }, select: { id: true } })
+            expect(db.conversation.findFirstOrThrow).toHaveBeenCalledWith({
+                where: { id, userId },
+                select: {
+                    messages: {
+                        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+                        select: { role: true, content: true },
+                    },
+                },
+            })
+            expect(llmService.rewriteQuery).not.toHaveBeenCalled()
             expect(ragService.retrieveDocumentChunks).not.toHaveBeenCalled()
             expect(llmService.stream).not.toHaveBeenCalled()
             expect(res.write).not.toHaveBeenCalled()
         })
 
-        it('retrieves chunks with the prompt and conversation id', async () => {
+        it('retrieves chunks with the rewritten prompt and conversation id', async () => {
             llmService.stream.mockResolvedValue(fakeStream([]))
 
             await chat()
 
-            expect(ragService.retrieveDocumentChunks).toHaveBeenCalledWith({ prompt: 'what is x?', conversationId: id })
+            expect(llmService.rewriteQuery).toHaveBeenCalledWith({ history, prompt: 'what is x?' })
+            expect(ragService.retrieveDocumentChunks).toHaveBeenCalledWith({ prompt: 'standalone x?', conversationId: id })
         })
 
-        it('passes history, prompt and joined chunk context to the llm', async () => {
+        it('passes history, original prompt and joined chunk context to the llm', async () => {
             llmService.stream.mockResolvedValue(fakeStream([]))
 
             await chat()
 
-            expect(db.message.findMany).toHaveBeenCalledWith({
-                where: { conversationId: id },
-                orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-                select: { role: true, content: true },
-            })
             expect(llmService.toHistory).toHaveBeenCalledWith([{ role: 'user', content: 'old question' }])
-            expect(llmService.stream).toHaveBeenCalledWith({ history, prompt: 'what is x?', context: 'chunk one\n\nchunk two' })
+            expect(llmService.stream).toHaveBeenCalledWith({
+                history,
+                prompt: 'what is x?',
+                context: 'content:"chunk one"\n\ncontent:"chunk two"\nmetadata:{"source":"a.pdf"}',
+            })
         })
 
-        it('streams json encoded sse chunks, then a done event, then ends', async () => {
+        it('streams json encoded sse chunks, then total tokens, then a done event, then ends', async () => {
             llmService.stream.mockResolvedValue(fakeStream(['Hello', ' line\nbreak']))
 
             await chat()
@@ -102,13 +111,16 @@ describe('ConversationsService', () => {
             expect(res.setHeaders).toHaveBeenCalledWith(
                 new Map([
                     ['Content-Type', 'text/event-stream'],
-                    ['Cache-Control', 'no-cache'],
+                    ['Cache-Control', 'no-cache, no-transform'],
                     ['Connection', 'keep-alive'],
                 ]),
             )
             expect(res.flushHeaders).toHaveBeenCalled()
             expect(written()).toBe(
-                'event: chunk\ndata: "Hello"\n\n' + 'event: chunk\ndata: " line\\nbreak"\n\n' + 'event: done\ndata: \n\n',
+                'event: chunk\ndata: "Hello"\n\n' +
+                    'event: chunk\ndata: " line\\nbreak"\n\n' +
+                    'event: total-tokens\ndata: 0\n\n' +
+                    'event: done\ndata: \n\n',
             )
             expect(res.end).toHaveBeenCalledTimes(1)
         })
