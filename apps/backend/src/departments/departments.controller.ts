@@ -9,9 +9,11 @@ import { UpdateDepartmentDto } from './dtos/update-department.dto.js'
 import { UseRoles } from 'src/role/use-roles.decorator.js'
 import { Role } from 'src/generated/prisma/enums.js'
 import { SkipAuth } from 'src/decorators/skip-auth/skip-auth.decorator.js'
+import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 
 @UseRoles({ roles: [Role.ADMIN] })
 @Controller('departments')
+@Cacheable()
 export class DepartmentsController {
     constructor(private readonly departmentsService: DepartmentsService) {}
 

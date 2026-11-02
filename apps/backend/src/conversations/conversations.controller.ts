@@ -33,10 +33,12 @@ import { UpsertFeedbackRequestDto } from './dto/upsert-feedback-request.dto.js'
 import { type Response } from 'express'
 import { UseRoles } from 'src/role/use-roles.decorator.js'
 import { Role } from 'src/generated/prisma/enums.js'
+import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 
 @UseRoles({ roles: [Role.USER] })
 @ApiBearerAuth()
 @Controller('conversations')
+@Cacheable()
 export class ConversationsController {
     constructor(private readonly conversationsService: ConversationsService) {}
 

@@ -8,10 +8,12 @@ import { CreateUserDto } from './dto/create-user.dto.js'
 import { UpdateUserDto } from './dto/update-user.dto.js'
 import { UserResponseDto } from './dto/user-response.dto.js'
 import { UsersService } from './users.service.js'
+import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 
 @UseRoles({ roles: [Role.ADMIN] })
 @ApiBearerAuth()
 @Controller('users')
+@Cacheable()
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 

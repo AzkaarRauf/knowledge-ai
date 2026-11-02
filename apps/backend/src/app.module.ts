@@ -1,26 +1,30 @@
+import { createKeyv } from '@keyv/redis'
+import { CacheModule } from '@nestjs/cache-manager'
 import { ArgumentsHost, Catch, HttpException, Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE, BaseExceptionFilter } from '@nestjs/core'
 import { ZodSerializationException, ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod'
+import { RoleGuard } from 'src/role/role.guard.js'
 import { ZodError } from 'zod'
 import { AppController } from './app.controller.js'
 import { AppService } from './app.service.js'
+import { AuthGuard } from './auth/auth.guard.js'
 import { AuthModule } from './auth/auth.module.js'
+import { ConversationsModule } from './conversations/conversations.module.js'
 import { DepartmentsModule } from './departments/departments.module.js'
+import { DocumentsModule } from './documents/documents.module.js'
+import { EmbeddingModule } from './embedding/embedding.module.js'
+import { env } from './env.js'
 import { HashingModule } from './hashing/hashing.module.js'
 import { HealthModule } from './health/health.module.js'
+import { AppCacheInterceptor } from './interceptors/cache/app-cache.interceptor.js'
 import { LoggingInterceptor } from './interceptors/logging/logging.interceptor.js'
+import { LLMModule } from './llm/llm.module.js'
 import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware.js'
 import { PrismaModule } from './prisma/prisma.module.js'
 import { PrismaService } from './prisma/prisma.service.js'
-import { UsersModule } from './users/users.module.js'
-import { DocumentsModule } from './documents/documents.module.js'
-import { S3Module } from './s3/s3.module.js'
-import { AuthGuard } from './auth/auth.guard.js'
-import { ConversationsModule } from './conversations/conversations.module.js'
-import { EmbeddingModule } from './embedding/embedding.module.js'
-import { LLMModule } from './llm/llm.module.js'
 import { RAGModule } from './rag/rag.module.js'
-import { RoleGuard } from 'src/role/role.guard.js'
+import { S3Module } from './s3/s3.module.js'
+import { UsersModule } from './users/users.module.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -53,11 +57,27 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         EmbeddingModule,
         LLMModule,
         RAGModule,
+        CacheModule.registerAsync({
+            isGlobal: true,
+            useFactory: async () => {
+                const redisStore = createKeyv(env.REDIS_CONNECTION_STRING)
+                redisStore.setTtl(env.REDIS_CACHE_TTL_MS ?? 5 * 1000)
+                redisStore.on('error', (err) => console.error('Redis error:', err))
+                return {
+                    stores: [redisStore],
+                }
+            },
+        }),
     ],
     controllers: [AppController],
     providers: [
         AppService,
         PrismaService,
+        {
+            // must be first so it wraps the zod serializer and caches the serialized response
+            provide: APP_INTERCEPTOR,
+            useClass: AppCacheInterceptor,
+        },
         {
             provide: APP_PIPE,
             useClass: ZodValidationPipe,

@@ -28,6 +28,8 @@ const envSchema = z.object({
                 .filter(Boolean),
         )
         .pipe(z.array(z.string()).nonempty('At least one domain is required')),
+    REDIS_CONNECTION_STRING: z.string().nonempty(),
+    REDIS_CACHE_TTL_MS: z.coerce.number().optional(),
 })
 
 export const env = envSchema.parse(process.env)

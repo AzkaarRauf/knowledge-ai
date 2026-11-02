@@ -31,11 +31,13 @@ import { UploadDocumentDto } from './dto/upload-document.dto.js'
 import { UploadDocumentBodyDto } from './dto/upload-document-body.dto.js'
 import { UseRoles } from 'src/role/use-roles.decorator.js'
 import { Role } from 'src/generated/prisma/enums.js'
+import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 
 // normal users can view docs; upload and delete stay admin only
 @UseRoles({ roles: [Role.USER] })
 @ApiBearerAuth()
 @Controller('documents')
+@Cacheable()
 export class DocumentsController {
     constructor(private readonly documentsService: DocumentsService) {}
 
@@ -83,6 +85,7 @@ export class DocumentsController {
     }
 
     @Get(':id/download-url')
+    @Cacheable(false) // presigned url expires, don't cache
     @ZodResponse({ type: DocumentDownloadUrlResponseDto, status: 200 })
     getDownloadUrl(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
         return this.documentsService.getDownloadUrl(id, userId)
