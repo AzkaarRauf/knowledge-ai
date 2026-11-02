@@ -72,9 +72,13 @@ export class AuthService {
             where: { token: refreshToken },
             include: { user: true },
         })
-        if (!oldToken) throw new UnauthorizedException()
+        if (!oldToken) {
+            this.clearAllAuthTokens(res)
+            throw new UnauthorizedException()
+        }
         if (oldToken.expiresAt.getTime() <= Date.now()) {
             await this.db.refreshToken.delete({ where: { id: oldToken.id } })
+            this.clearAllAuthTokens(res)
             throw new UnauthorizedException()
         }
         const [newToken] = await this.db.$transaction([

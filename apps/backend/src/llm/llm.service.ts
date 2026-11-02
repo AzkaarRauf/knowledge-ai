@@ -3,6 +3,7 @@ import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
 import { Injectable } from '@nestjs/common'
 import { MessageRole } from 'src/generated/prisma/enums.js'
+import { AIMessage, HumanMessage, SystemMessage, trimMessages } from '@langchain/core/messages'
 
 @Injectable()
 export class LLMService {
@@ -43,11 +44,21 @@ export class LLMService {
 
     async stream(args: { history: ReturnType<LLMService['toHistory']>; prompt: string; context: string }) {
         const { context, history, prompt } = args
-        return this.chain.stream({ history, prompt, context })
+        const trimmed = await trimMessages(history, {
+            tokenCounter: this.llm,
+            maxTokens: 20000,
+            startOn: 'human',
+            strategy: 'last',
+        })
+        return this.chain.stream({ history: trimmed, prompt, context })
     }
 
     toHistory(messages: { role: MessageRole; content: string }[]) {
-        return messages.map((item) => [item.role, item.content] as const)
+        return messages.map((item) => {
+            if (item.role === MessageRole.user) return new HumanMessage(item.content)
+            if (item.role === MessageRole.assistant) return new AIMessage(item.content)
+            return new SystemMessage(item.content)
+        })
     }
 
     async rewriteQuery(args: { history: ReturnType<LLMService['toHistory']>; prompt: string }) {

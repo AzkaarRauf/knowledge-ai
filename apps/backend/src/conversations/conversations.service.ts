@@ -70,11 +70,16 @@ export class ConversationsService {
             ]),
         )
         res.flushHeaders()
+        const writeEvent = <T>(event: 'chunk' | 'error' | 'total-tokens', data: T) => {
+            res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+        }
         let finalContent = ''
+        let totalTokens = 0
         try {
             for await (const chunk of stream) {
                 finalContent += chunk.text
-                res.write(`event: chunk\ndata: ${JSON.stringify(chunk.text)}\n\n`)
+                writeEvent('chunk', chunk.text)
+                totalTokens += chunk.usage_metadata?.total_tokens ?? 0
             }
             // save to db after stream ends
             const answeredAt = new Date()
@@ -89,11 +94,10 @@ export class ConversationsService {
             ])
         } catch (e) {
             this.logger.error(e)
-            res.write(`event: error\n`)
-            res.write(`data: ${JSON.stringify('Something went wrong')}\n\n`)
+            writeEvent('error', 'Something went wrong')
         } finally {
-            res.write(`event: done\n`)
-            res.write(`data: \n\n`)
+            writeEvent('total-tokens', totalTokens)
+            res.write(`event: done\ndata: \n\n`)
             res.end()
         }
 
