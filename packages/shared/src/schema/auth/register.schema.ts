@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from 'zod'
 import { passwordSchema } from '../common/password.schema.js'
 import { loginResponseSchema } from './login.schema.js'
 

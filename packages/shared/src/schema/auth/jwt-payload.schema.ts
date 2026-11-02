@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from 'zod'
 import { roleSchema } from './role.schema.js'
 
 export const jwtPayloadSchema = z.object({

@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from 'zod'
 import { roleSchema } from '../auth/role.schema.js'
 import { isoDateSchema } from '../common/date.schema.js'
 import { publicDepartmentSchema } from '../departments/department.schema.js'

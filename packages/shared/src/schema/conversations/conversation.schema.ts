@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from 'zod'
 import { isoDateSchema } from '../common/date.schema.js'
 import { listQuerySchema, paginatedSchema } from '../common/pagination.schema.js'
 

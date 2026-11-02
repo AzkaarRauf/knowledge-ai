@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from 'zod'
 import { isoDateSchema } from '../common/date.schema.js'
 
 export const feedbackRatingSchema = z.enum(['UP', 'DOWN'])

@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from 'zod'
 
 export const refreshTokenResponseSchema = z.object({
     token: z.jwt(),
