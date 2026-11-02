@@ -4,7 +4,7 @@ Pending work vs the assignment, in suggested order.
 
 ## 1. Auth
 
-- [ ] `RefreshToken` expiry + index
+- [x] `RefreshToken` expiry + index
 
 ## 2. Chat history
 

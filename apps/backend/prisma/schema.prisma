@@ -34,11 +34,14 @@ model User {
 
 model RefreshToken {
   id        String   @id @default(uuid()) @db.Uuid
-  token     String   @default(uuid()) @db.Uuid
+  token     String   @unique @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
+  expiresAt DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Department {

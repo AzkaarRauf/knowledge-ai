@@ -57,7 +57,9 @@ export class AuthService {
 
         const token = await this.generateAccessToken(jwtPayload)
 
-        const newRefreshToken = await this.db.refreshToken.create({ data: { userId: user.id } })
+        const newRefreshToken = await this.db.refreshToken.create({
+            data: { userId: user.id, expiresAt: this.refreshTokenExpiry() },
+        })
 
         this.setRefreshToken(res, newRefreshToken.token)
         this.setAccessToken(res, token)
@@ -66,18 +68,17 @@ export class AuthService {
     }
 
     async refreshToken(refreshToken: string, res: Response) {
-        const oldToken = await this.db.refreshToken.findFirst({
+        const oldToken = await this.db.refreshToken.findUnique({
             where: { token: refreshToken },
             include: { user: true },
         })
         if (!oldToken) throw new UnauthorizedException()
-        const expiresOn = oldToken.createdAt.getTime() + REFRESH_TOKEN_DURATION
-        if (Date.now() > expiresOn) {
+        if (oldToken.expiresAt.getTime() <= Date.now()) {
             await this.db.refreshToken.delete({ where: { id: oldToken.id } })
             throw new UnauthorizedException()
         }
         const [newToken] = await this.db.$transaction([
-            this.db.refreshToken.create({ data: { userId: oldToken.userId } }),
+            this.db.refreshToken.create({ data: { userId: oldToken.userId, expiresAt: this.refreshTokenExpiry() } }),
             this.db.refreshToken.delete({ where: { id: oldToken.id } }),
         ])
         const accessToken = await this.generateAccessToken({
@@ -95,13 +96,14 @@ export class AuthService {
     async logout(refreshToken: string | undefined, res: Response) {
         this.clearAllAuthTokens(res)
         if (!refreshToken) return
-        const token = await this.db.refreshToken.findFirst({ where: { token: refreshToken } })
-        if (!token) return
-        await this.db.refreshToken.delete({ where: { id: token.id } })
+        await this.db.refreshToken.deleteMany({ where: { token: refreshToken } })
     }
 
     private generateAccessToken(payload: JwtPayloadDto) {
         return this.jwtService.signAsync(payload)
+    }
+    private refreshTokenExpiry() {
+        return new Date(Date.now() + REFRESH_TOKEN_DURATION)
     }
     private setRefreshToken(res: Response, refreshToken: string) {
         res.cookie(this.refreshTokenCookieName, refreshToken, {
