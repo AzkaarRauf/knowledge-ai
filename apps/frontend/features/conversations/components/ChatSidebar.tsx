@@ -1,8 +1,8 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { differenceInCalendarDays } from 'date-fns'
-import { Pencil, SquarePen, Trash2 } from 'lucide-react'
+import { Pencil, Search, SquarePen, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
@@ -10,15 +10,22 @@ import { toast } from 'sonner'
 import { isError, MAX_PAGE_SIZE, safe } from 'shared'
 import { ConfirmationDialog } from '@/components/ConfirmationDialog'
 import { Button } from '@/components/ui/button'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { Skeleton } from '@/components/ui/skeleton'
 import { conversationsQueryOptions } from '@/features/conversations/api/queries'
 import { RenameConversationDialog } from '@/features/conversations/components/RenameConversationDialog'
 import { useDeleteConversationMutation } from '@/features/conversations/hooks/useDeleteConversationMutation'
 import { type Conversation } from '@/features/conversations/schemas'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 
+const SEARCH_DEBOUNCE_MS = 300
+
 export function ChatSidebar() {
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS)
+
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
       <div className="p-2">
@@ -26,6 +33,25 @@ export function ChatSidebar() {
           <SquarePen data-icon="inline-start" />
           New chat
         </Button>
+        <InputGroup className="mt-2">
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+          <InputGroupInput
+            type="search"
+            placeholder="Search chats..."
+            aria-label="Search chats"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton size="icon-xs" aria-label="Clear search" onClick={() => setSearch('')}>
+                <X />
+              </InputGroupButton>
+            </InputGroupAddon>
+          )}
+        </InputGroup>
       </div>
       {/* the list reads the route params, which needs a Suspense boundary */}
       <Suspense
@@ -35,16 +61,21 @@ export function ChatSidebar() {
           </div>
         }
       >
-        <ConversationList />
+        <ConversationList search={debouncedSearch} />
       </Suspense>
     </aside>
   )
 }
 
-function ConversationList() {
+function ConversationList({ search }: { search: string }) {
   const router = useRouter()
   const { conversationId } = useParams<{ conversationId?: string }>()
-  const { data, isPending } = useQuery(conversationsQueryOptions({ pageSize: MAX_PAGE_SIZE }))
+  // send no search when empty, so the plain list keeps its own cache entry
+  const { data, isPending } = useQuery({
+    ...conversationsQueryOptions({ pageSize: MAX_PAGE_SIZE, search: search || undefined }),
+    // keep the old list on screen while a new search loads, so it does not flash
+    placeholderData: keepPreviousData,
+  })
   // only group once data is here: grouping reads the clock, which the prerender must not do
   const groups = data ? groupByDay(data.data) : []
 
@@ -68,7 +99,7 @@ function ConversationList() {
         {isPending ? (
           <ChatSidebarSkeleton />
         ) : groups.length === 0 ? (
-          <p className="px-2 py-1.5 text-sm text-muted-foreground">No chats yet</p>
+          <p className="px-2 py-1.5 text-sm text-muted-foreground">{search ? 'No chats found' : 'No chats yet'}</p>
         ) : (
           groups.map((group) => (
             <section key={group.label} className="mt-4 first:mt-2">

@@ -3,13 +3,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Building2, MessageSquareOff, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { chatReplyQueryOptions, conversationQueryOptions, messagesQueryOptions } from '@/features/conversations/api/queries'
 import { ChatComposer } from '@/features/conversations/components/ChatComposer'
 import { ChatMessage } from '@/features/conversations/components/ChatMessage'
+import { MessageFeedback } from '@/features/conversations/components/MessageFeedback'
 import { clearPendingReply, getPendingReply } from '@/features/conversations/pending-prompt'
 import { publicDepartmentsQueryOptions } from '@/features/departments/api/queries'
 
@@ -78,7 +79,10 @@ export function ConversationView({ conversationId }: { conversationId: string })
         ) : (
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
             {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+              <Fragment key={message.id}>
+                <ChatMessage message={message} />
+                {message.role === 'assistant' && <MessageFeedback conversationId={conversationId} message={message} />}
+              </Fragment>
             ))}
             {showPending && (
               <>

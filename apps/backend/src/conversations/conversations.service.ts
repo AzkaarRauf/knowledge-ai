@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { Response } from 'express'
 import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
 import { ConversationWhereInput, MessageWhereInput } from 'src/generated/prisma/models.js'
@@ -15,6 +15,8 @@ import { MessagesQueryDto } from './dto/messages-query.dto.js'
 import { MessagesResponseDto } from './dto/messages-response.dto.js'
 import { UpdateConversationRequestDto } from './dto/update-conversation-request.dto.js'
 import { UpdateConversationResponseDto } from './dto/update-conversation-response.dto.js'
+import { FeedbackResponseDto } from './dto/feedback-response.dto.js'
+import { UpsertFeedbackRequestDto } from './dto/upsert-feedback-request.dto.js'
 
 @Injectable()
 export class ConversationsService {
@@ -149,10 +151,42 @@ export class ConversationsService {
                 where,
                 orderBy: [{ [query.sortBy]: query.sortOrder }, { id: 'asc' }],
                 ...toPrismaPagination(query),
+                // only this user's rating
+                include: { feedback: { where: { userId }, select: { rating: true } } },
             }),
             this.db.message.count({ where }),
         ])
-        return { data: messages, meta: buildPaginationMeta(query, total) }
+        return {
+            data: messages.map(({ feedback, ...message }) => ({ ...message, feedback: feedback[0]?.rating ?? null })),
+            meta: buildPaginationMeta(query, total),
+        }
+    }
+
+    async upsertFeedback(args: {
+        id: string
+        messageId: string
+        userId: string
+        upsertFeedbackDto: UpsertFeedbackRequestDto
+    }): Promise<FeedbackResponseDto> {
+        const { id, messageId, userId, upsertFeedbackDto } = args
+        // throws P2025 (404) if message is missing or its conversation is not owned by user
+        const message = await this.db.message.findFirstOrThrow({
+            where: { id: messageId, conversationId: id, conversation: { userId } },
+            select: { role: true },
+        })
+        if (message.role !== 'assistant') {
+            throw new BadRequestException('Only assistant messages can be rated')
+        }
+        const data = { rating: upsertFeedbackDto.rating, comment: upsertFeedbackDto.comment ?? null }
+        return this.db.feedback.upsert({
+            where: { messageId_userId: { messageId, userId } },
+            create: { ...data, messageId, userId },
+            update: data,
+        })
+    }
+
+    async removeFeedback({ id, messageId, userId }: { id: string; messageId: string; userId: string }) {
+        await this.db.feedback.deleteMany({ where: { messageId, userId, message: { conversationId: id } } })
     }
 
     async update(args: {

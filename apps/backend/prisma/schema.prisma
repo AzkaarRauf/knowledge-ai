@@ -30,13 +30,18 @@ model User {
   departmentId  String         @db.Uuid
   documents     Document[]
   conversations Conversation[]
+  queryLogs     QueryLog[]
+  feedback      Feedback[]
+  auditLogs     AuditLog[]
+
+  @@index([departmentId])
 }
 
 model RefreshToken {
   id        String   @id @default(uuid()) @db.Uuid
   token     String   @unique @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
-  expiresAt DateTime @default(now())
+  expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id])
@@ -70,6 +75,10 @@ model Document {
   departmentId   String?         @db.Uuid
 
   @@unique([fileHash, departmentId])
+  @@index([userId])
+  @@index([conversationId])
+  @@index([departmentId])
+  @@index([createdAt])
 }
 
 model DocumentChunk {
@@ -97,8 +106,13 @@ model Conversation {
   updatedAt    DateTime    @updatedAt
   userId       String      @db.Uuid
   messages     Message[]
+  queryLogs    QueryLog[]
   department   Department? @relation(fields: [departmentId], references: [id])
   departmentId String?     @db.Uuid
+
+  @@index([userId, updatedAt])
+  @@index([userId, createdAt])
+  @@index([departmentId])
 }
 
 enum MessageRole {
@@ -113,6 +127,77 @@ model Message {
   role           MessageRole
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String       @db.Uuid
+  feedback       Feedback[]
+
+  @@index([conversationId, createdAt])
+}
+
+// one row per chat/search query. kept for analytics even after the conversation is deleted
+model QueryLog {
+  id             String        @id @default(uuid()) @db.Uuid
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String        @db.Uuid
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  conversationId String?       @db.Uuid
+  query          String
+  // question after rewrite with chat history. null when no rewrite happened
+  rewrittenQuery String?
+  chunkCount     Int           @default(0)
+  latencyMs      Int
+  // set when the query failed
+  error          String?
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+enum FeedbackRating {
+  UP
+  DOWN
+}
+
+// thumbs up/down on an assistant message. one per user per message
+model Feedback {
+  id        String         @id @default(uuid()) @db.Uuid
+  message   Message        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String         @db.Uuid
+  user      User           @relation(fields: [userId], references: [id])
+  userId    String         @db.Uuid
+  rating    FeedbackRating
+  comment   String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum AuditAction {
+  DOCUMENT_UPLOADED
+  DOCUMENT_DELETED
+  CONVERSATION_DELETED
+  USER_ROLE_CHANGED
+  USER_DEPARTMENT_CHANGED
+}
+
+// who did what to which entity. entityId has no FK so the row stays after the entity is deleted
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  actor      User        @relation(fields: [actorId], references: [id])
+  actorId    String      @db.Uuid
+  action     AuditAction
+  entityType String
+  entityId   String      @db.Uuid
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action, createdAt])
+  @@index([createdAt])
 }

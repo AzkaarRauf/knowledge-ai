@@ -1,6 +1,7 @@
 import z from 'zod'
 import { isoDateSchema } from '../common/date.schema.js'
 import { listQuerySchema, paginatedSchema } from '../common/pagination.schema.js'
+import { feedbackRatingSchema } from '../feedback/feedback.schema.js'
 
 export const messageRoleSchema = z.enum(['user', 'assistant', 'system'])
 export type MessageRole = z.infer<typeof messageRoleSchema>
@@ -9,6 +10,8 @@ export const messageResponseSchema = z.object({
     id: z.uuid(),
     content: z.string(),
     role: messageRoleSchema,
+    // current user's rating on this message. null when not rated
+    feedback: feedbackRatingSchema.nullable(),
     createdAt: isoDateSchema,
     updatedAt: isoDateSchema,
 })

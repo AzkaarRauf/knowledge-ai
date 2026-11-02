@@ -3,9 +3,11 @@ import {
   conversationResponseSchema,
   conversationsQuerySchema,
   createConversationRequestSchema,
+  feedbackResponseSchema,
   messageResponseSchema,
   messagesQuerySchema,
   updateConversationRequestSchema,
+  upsertFeedbackRequestSchema,
 } from 'shared'
 import { z } from 'zod'
 import { paginatedSchema } from '@/lib/schemas'
@@ -31,10 +33,26 @@ export const MessageSchema = z.object({
   id: z.string().catch(''),
   content: z.string().catch(''),
   role: z.enum(['user', 'assistant', 'system']).catch('assistant'),
+  feedback: z.enum(['UP', 'DOWN']).nullable().catch(null),
   createdAt: z.string().catch(''),
   updatedAt: z.string().catch(''),
 }) satisfies z.ZodType<z.input<typeof messageResponseSchema>>
 export type Message = z.infer<typeof MessageSchema>
+
+export const FeedbackSchema = z.object({
+  id: z.string().catch(''),
+  messageId: z.string().catch(''),
+  userId: z.string().catch(''),
+  rating: z.enum(['UP', 'DOWN']).catch('UP'),
+  comment: z.string().nullable().catch(null),
+  createdAt: z.string().catch(''),
+  updatedAt: z.string().catch(''),
+}) satisfies z.ZodType<z.input<typeof feedbackResponseSchema>>
+export type Feedback = z.infer<typeof FeedbackSchema>
+export type FeedbackRating = Feedback['rating']
+
+export const UpsertFeedbackRequestSchema = upsertFeedbackRequestSchema
+export type UpsertFeedbackRequest = z.infer<typeof UpsertFeedbackRequestSchema>
 
 export const PaginatedMessagesSchema = paginatedSchema(MessageSchema)
 export type PaginatedMessages = z.infer<typeof PaginatedMessagesSchema>

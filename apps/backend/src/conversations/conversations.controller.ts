@@ -9,6 +9,7 @@ import {
     ParseUUIDPipe,
     Patch,
     Post,
+    Put,
     Query,
     Res,
 } from '@nestjs/common'
@@ -27,6 +28,8 @@ import { MessagesQueryDto } from './dto/messages-query.dto.js'
 import { MessagesResponseDto } from './dto/messages-response.dto.js'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { ChatRequestDto } from './dto/chat-request.dto.js'
+import { FeedbackResponseDto } from './dto/feedback-response.dto.js'
+import { UpsertFeedbackRequestDto } from './dto/upsert-feedback-request.dto.js'
 import { type Response } from 'express'
 import { UseRoles } from 'src/role/use-roles.decorator.js'
 import { Role } from 'src/generated/prisma/enums.js'
@@ -81,6 +84,27 @@ export class ConversationsController {
     @Delete(':id')
     remove(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
         return this.conversationsService.remove({ id, userId })
+    }
+
+    @Put(':id/messages/:messageId/feedback')
+    @ZodResponse({ type: FeedbackResponseDto })
+    upsertFeedback(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Param('messageId', ParseUUIDPipe) messageId: string,
+        @Body() upsertFeedbackDto: UpsertFeedbackRequestDto,
+        @JwtPayload() { userId }: JwtPayloadDto,
+    ) {
+        return this.conversationsService.upsertFeedback({ id, messageId, userId, upsertFeedbackDto })
+    }
+
+    @Delete(':id/messages/:messageId/feedback')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    removeFeedback(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Param('messageId', ParseUUIDPipe) messageId: string,
+        @JwtPayload() { userId }: JwtPayloadDto,
+    ) {
+        return this.conversationsService.removeFeedback({ id, messageId, userId })
     }
 
     @Post(':id/chat')

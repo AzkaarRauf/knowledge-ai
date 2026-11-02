@@ -17,7 +17,7 @@ Pending work vs the assignment, in suggested order.
 - [ ] ~~`GET /admin/users`~~
 - [ ] ~~`GET /admin/analytics`~~
 - [ ] ~~`DELETE /admin/documents/:id`~~
-- [ ] Search, Analytics, Admin modules
+- [ ] ~~Search, Analytics, Admin modules~~
 - [ ] ~~Let normal users upload/list documents~~
 - [x] Let normal users view docs (no upload)
   - `GET /documents` + `GET /documents/:id` open to `USER`; upload + delete stay `ADMIN` only
@@ -26,16 +26,16 @@ Pending work vs the assignment, in suggested order.
 
 ## 4. DB tables + design
 
-- [ ] `QueryLog` model
-- [ ] `Feedback` model
-- [ ] `AuditLog` model
-- [ ] `onDelete` rules on relations
-- [ ] Indexes on `userId`, `conversationId`, `departmentId`, `createdAt`
+- [x] `QueryLog` model
+- [x] `Feedback` model
+- [x] `AuditLog` model
+- [x] `onDelete` rules on relations (Message→Conversation cascade; Feedback→Message cascade; QueryLog→Conversation set null)
+- [x] Indexes on `userId`, `conversationId`, `departmentId`, `createdAt`
 
 ## 5. Feedback
 
-- [ ] Feedback endpoint
-- [ ] Thumbs up/down in chat UI
+- [x] Feedback endpoint
+- [x] Thumbs up/down in chat UI
 
 ## 6. Background processing + Redis
 

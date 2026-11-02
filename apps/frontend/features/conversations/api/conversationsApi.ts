@@ -8,6 +8,7 @@ import {
   type ChatRequest,
   ConversationSchema,
   CreateConversationRequestSchema,
+  FeedbackSchema,
   type CreateConversationRequest,
   type ListConversationsParams,
   ListConversationsRequestSchema,
@@ -17,6 +18,8 @@ import {
   PaginatedMessagesSchema,
   UpdateConversationRequestSchema,
   type UpdateConversationRequest,
+  UpsertFeedbackRequestSchema,
+  type UpsertFeedbackRequest,
 } from '@/features/conversations/schemas'
 
 export async function getConversations(params: ListConversationsParams = {}) {
@@ -46,6 +49,18 @@ export async function updateConversation(id: string, request: UpdateConversation
 
 export async function deleteConversation(id: string) {
   await api.delete(`/conversations/${id}`)
+}
+
+export async function upsertMessageFeedback(conversationId: string, messageId: string, request: UpsertFeedbackRequest) {
+  const res = await api.put(
+    `/conversations/${conversationId}/messages/${messageId}/feedback`,
+    UpsertFeedbackRequestSchema.parse(request),
+  )
+  return FeedbackSchema.parse(res.data)
+}
+
+export async function deleteMessageFeedback(conversationId: string, messageId: string) {
+  await api.delete(`/conversations/${conversationId}/messages/${messageId}/feedback`)
 }
 
 const SseDataSchema = z.string().catch('')
