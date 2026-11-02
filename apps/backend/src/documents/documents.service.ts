@@ -127,7 +127,7 @@ export class DocumentsService {
     async findAll(userId: string, query: ListDocumentsQuery): Promise<Paginated<Document>> {
         const { search, sortBy, sortOrder, conversationId, createdFrom, createdTo } = query
         const where: Prisma.DocumentWhereInput = {
-            userId,
+            ...this.visibleTo(userId),
             conversationId,
             ...(search && { filename: { contains: search, mode: 'insensitive' } }),
             ...((createdFrom || createdTo) && { createdAt: { gte: createdFrom, lte: createdTo } }),
@@ -146,9 +146,23 @@ export class DocumentsService {
         return { meta: buildPaginationMeta(query, total), data }
     }
 
-    // throws P2025 (404) if document is missing or not owned by user
+    // throws P2025 (404) if document is missing or not visible to user
     findOne(id: string, userId: string): Promise<Document> {
-        return this.db.document.findUniqueOrThrow({ where: { id, userId }, include: documentInclude })
+        return this.db.document.findFirstOrThrow({ where: { id, ...this.visibleTo(userId) }, include: documentInclude })
+    }
+
+    async getDownloadUrl(id: string, userId: string): Promise<{ url: string }> {
+        // throws P2025 (404) if document is missing or not visible to user
+        const { s3key, filename } = await this.db.document.findFirstOrThrow({
+            where: { id, ...this.visibleTo(userId) },
+            select: { s3key: true, filename: true },
+        })
+        return { url: await this.s3Service.getReadUrl(s3key, filename) }
+    }
+
+    // shared docs are visible to everyone; docs tied to a conversation only to that conversation's owner
+    private visibleTo(userId: string): Prisma.DocumentWhereInput {
+        return { OR: [{ conversationId: null }, { conversation: { userId } }] }
     }
 
     async remove(id: string, userId: string) {

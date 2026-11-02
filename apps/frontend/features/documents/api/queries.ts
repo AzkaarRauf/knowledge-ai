@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query'
-import { getDocuments } from '@/features/documents/api/documentsApi'
+import { getDocumentDownloadUrl, getDocuments } from '@/features/documents/api/documentsApi'
 import { type ListDocumentsParams, type ListDocumentsQuery, ListDocumentsRequestSchema } from '@/features/documents/schemas'
 
 export const documentKeys = {
@@ -7,6 +7,7 @@ export const documentKeys = {
   lists: () => [...documentKeys.all, 'list'] as const,
   list: (query: ListDocumentsQuery) => [...documentKeys.lists(), query] as const,
   detail: (id: string) => [...documentKeys.all, 'detail', id] as const,
+  downloadUrl: (id: string) => [...documentKeys.detail(id), 'download-url'] as const,
 }
 
 export const documentsQueryOptions = (params: ListDocumentsParams = {}) => {
@@ -17,3 +18,12 @@ export const documentsQueryOptions = (params: ListDocumentsParams = {}) => {
     queryFn: () => getDocuments(params),
   })
 }
+
+export const documentDownloadUrlQueryOptions = (id: string) =>
+  queryOptions({
+    queryKey: documentKeys.downloadUrl(id),
+    queryFn: () => getDocumentDownloadUrl(id),
+    // presigned urls expire, so always fetch a fresh one and never keep it
+    staleTime: 0,
+    gcTime: 0,
+  })

@@ -8,7 +8,7 @@ import { getCredentials } from '@/features/auth/auth.server'
 const NAV_ITEMS = [
   { href: '/', label: 'Home' },
   { href: '/chat', label: 'Chat' },
-  { href: '/documents', label: 'Documents', adminOnly: true },
+  { href: '/documents', label: 'Documents' },
   { href: '/departments', label: 'Departments', adminOnly: true },
   { href: '/users', label: 'Users', adminOnly: true },
 ] as const

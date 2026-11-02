@@ -41,3 +41,9 @@ export type ListDocumentsQuery = z.infer<typeof listDocumentsQuerySchema>
 
 export const paginatedDocumentsSchema = paginatedSchema(documentSchema)
 export type PaginatedDocuments = z.infer<typeof paginatedDocumentsSchema>
+
+export const documentDownloadUrlSchema = z.object({
+    // short-lived presigned url to read the file
+    url: z.url(),
+})
+export type DocumentDownloadUrl = z.infer<typeof documentDownloadUrlSchema>

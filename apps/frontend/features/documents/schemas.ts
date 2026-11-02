@@ -1,4 +1,10 @@
-import { documentSchema, listDocumentsQuerySchema, uploadDocumentBodySchema, uploadDocumentRequestSchema } from 'shared'
+import {
+  documentDownloadUrlSchema,
+  documentSchema,
+  listDocumentsQuerySchema,
+  uploadDocumentBodySchema,
+  uploadDocumentRequestSchema,
+} from 'shared'
 import { z } from 'zod'
 import { paginatedSchema } from '@/lib/schemas'
 
@@ -14,6 +20,11 @@ export const DocumentSchema = z.object({
   updatedAt: z.string().catch(''),
 }) satisfies z.ZodType<z.input<typeof documentSchema>>
 export type Document = z.infer<typeof DocumentSchema>
+
+export const DocumentDownloadUrlSchema = z.object({
+  url: z.string().catch(''),
+}) satisfies z.ZodType<z.input<typeof documentDownloadUrlSchema>>
+export type DocumentDownloadUrl = z.infer<typeof DocumentDownloadUrlSchema>
 
 export const PaginatedDocumentsSchema = paginatedSchema(DocumentSchema)
 export type PaginatedDocuments = z.infer<typeof PaginatedDocumentsSchema>

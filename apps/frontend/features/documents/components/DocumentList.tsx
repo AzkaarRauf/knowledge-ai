@@ -6,7 +6,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { documentsQueryOptions } from '@/features/documents/api/queries'
+import { documentDownloadUrlQueryOptions, documentsQueryOptions } from '@/features/documents/api/queries'
 import { DocumentListPagination } from '@/features/documents/components/DocumentListPagination'
 import { DocumentListToolbar } from '@/features/documents/components/DocumentListToolbar'
 import { useDeleteDocumentMutation } from '@/features/documents/hooks/useDeleteDocumentMutation'
@@ -14,15 +14,16 @@ import { useDocumentListParams } from '@/features/documents/hooks/useDocumentLis
 import { type Document, type ListDocumentsQuery } from '@/features/documents/schemas'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, ArrowUpDown, FileText, SearchX, Trash2 } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, FileText, SearchX, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { DOCUMENT_SORT_FIELDS, isError, safe } from 'shared'
 import { toast } from 'sonner'
 
 type SortField = (typeof DOCUMENT_SORT_FIELDS)[number]
 
-export function DocumentList() {
+// canManage shows admin-only actions (delete); download is for everyone
+export function DocumentList({ canManage }: { canManage: boolean }) {
   const { params, query, hrefFor, setParams } = useDocumentListParams()
   const { data, isPending } = useQuery({
     ...documentsQueryOptions(params),
@@ -33,6 +34,8 @@ export function DocumentList() {
 
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null)
   const deleteMutation = useDeleteDocumentMutation()
+  const queryClient = useQueryClient()
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   // deleting the last row of the last page leaves us past the end, so step back
   useEffect(() => {
@@ -48,6 +51,16 @@ export function DocumentList() {
     const res = await safe(deleteMutation.mutateAsync({ id }))
     if (isError(res)) return toast.error(getErrorMessage(res))
     toast.success(`"${filename}" deleted`)
+  }
+
+  async function handleDownload({ id }: Document) {
+    setDownloadingId(id)
+    const res = await safe(queryClient.fetchQuery(documentDownloadUrlQueryOptions(id)))
+    setDownloadingId(null)
+    // load errors already toast from the global QueryCache handler
+    if (isError(res)) return
+    // the url is sent as an attachment, so the browser downloads it and stays on this page
+    window.location.assign(res.url)
   }
 
   function handleSort(field: SortField) {
@@ -92,7 +105,9 @@ export function DocumentList() {
                 <FileText />
               </EmptyMedia>
               <EmptyTitle>No documents yet</EmptyTitle>
-              <EmptyDescription>Upload a PDF, DOCX or text file to get started.</EmptyDescription>
+              <EmptyDescription>
+                {canManage ? 'Upload a PDF, DOCX or text file to get started.' : 'No documents have been shared yet.'}
+              </EmptyDescription>
             </EmptyHeader>
           </Empty>
         )
@@ -105,7 +120,7 @@ export function DocumentList() {
                   <SortableHead field="filename" label="Name" query={query} onSort={handleSort} />
                   <TableHead>Department</TableHead>
                   <SortableHead field="createdAt" label="Uploaded" query={query} onSort={handleSort} />
-                  <TableHead className="w-12">
+                  <TableHead className={canManage ? 'w-20' : 'w-12'}>
                     <span className="sr-only">Actions</span>
                   </TableHead>
                 </TableRow>
@@ -118,23 +133,41 @@ export function DocumentList() {
                       {document.department?.name ?? 'None'}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{new Date(document.createdAt).toLocaleString()}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       <Tooltip>
                         <TooltipTrigger
                           render={
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              aria-label={`Delete ${document.filename}`}
-                              disabled={deleteMutation.isPending}
-                              onClick={() => setDocumentToDelete(document)}
+                              aria-label={`Download ${document.filename}`}
+                              disabled={downloadingId === document.id}
+                              onClick={() => handleDownload(document)}
                             />
                           }
                         >
-                          <Trash2 />
+                          <Download />
                         </TooltipTrigger>
-                        <TooltipContent>Delete</TooltipContent>
+                        <TooltipContent>Download</TooltipContent>
                       </Tooltip>
+                      {canManage && (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Delete ${document.filename}`}
+                                disabled={deleteMutation.isPending}
+                                onClick={() => setDocumentToDelete(document)}
+                              />
+                            }
+                          >
+                            <Trash2 />
+                          </TooltipTrigger>
+                          <TooltipContent>Delete</TooltipContent>
+                        </Tooltip>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

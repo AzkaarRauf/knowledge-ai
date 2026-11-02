@@ -1,5 +1,6 @@
 import { api } from '@/lib/api-client'
 import {
+  DocumentDownloadUrlSchema,
   DocumentSchema,
   type ListDocumentsParams,
   ListDocumentsRequestSchema,
@@ -12,6 +13,11 @@ export async function getDocuments(params: ListDocumentsParams = {}) {
   // axios sends Date params as ISO strings
   const res = await api.get('/documents', { params: ListDocumentsRequestSchema.parse(params) })
   return PaginatedDocumentsSchema.parse(res.data)
+}
+
+export async function getDocumentDownloadUrl(id: string) {
+  const res = await api.get(`/documents/${id}/download-url`)
+  return DocumentDownloadUrlSchema.parse(res.data)
 }
 
 export async function uploadDocument(request: UploadDocumentRequest) {

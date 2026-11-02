@@ -23,6 +23,7 @@ import { DOCUMENT_MAX_SIZE, DOCUMENT_MIME_TYPES } from 'shared'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
 import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
 import { DocumentsService } from './documents.service.js'
+import { DocumentDownloadUrlResponseDto } from './dto/document-download-url-response.dto.js'
 import { DocumentResponseDto } from './dto/document-response.dto.js'
 import { ListDocumentsQueryDto } from './dto/list-documents-query.dto.js'
 import { PaginatedDocumentsResponseDto } from './dto/paginated-documents-response.dto.js'
@@ -31,13 +32,15 @@ import { UploadDocumentBodyDto } from './dto/upload-document-body.dto.js'
 import { UseRoles } from 'src/role/use-roles.decorator.js'
 import { Role } from 'src/generated/prisma/enums.js'
 
-@UseRoles({ roles: [Role.ADMIN] })
+// normal users can view docs; upload and delete stay admin only
+@UseRoles({ roles: [Role.USER] })
 @ApiBearerAuth()
 @Controller('documents')
 export class DocumentsController {
     constructor(private readonly documentsService: DocumentsService) {}
 
     @Post('upload')
+    @UseRoles({ roles: [Role.ADMIN] })
     @UseInterceptors(FileInterceptor('file'))
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: UploadDocumentDto })
@@ -79,7 +82,14 @@ export class DocumentsController {
         return this.documentsService.findOne(id, userId)
     }
 
+    @Get(':id/download-url')
+    @ZodResponse({ type: DocumentDownloadUrlResponseDto, status: 200 })
+    getDownloadUrl(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
+        return this.documentsService.getDownloadUrl(id, userId)
+    }
+
     @Delete(':id')
+    @UseRoles({ roles: [Role.ADMIN] })
     remove(@Param('id', ParseUUIDPipe) id: string, @JwtPayload() { userId }: JwtPayloadDto) {
         return this.documentsService.remove(id, userId)
     }
