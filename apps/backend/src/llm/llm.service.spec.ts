@@ -35,15 +35,16 @@ describe('LLMService', () => {
     })
 
     describe('toHistory', () => {
-        it('maps messages to [role, content] tuples', () => {
-            expect(
-                service.toHistory([
-                    { role: 'user', content: 'hi' },
-                    { role: 'assistant', content: 'hello' },
-                ]),
-            ).toEqual([
-                ['user', 'hi'],
-                ['assistant', 'hello'],
+        it('maps roles to langchain messages', () => {
+            const history = service.toHistory([
+                { role: 'user', content: 'hi' },
+                { role: 'assistant', content: 'hello' },
+                { role: 'system', content: 'note' },
+            ])
+            expect(history.map((m) => [m.type, m.text])).toEqual([
+                ['human', 'hi'],
+                ['ai', 'hello'],
+                ['system', 'note'],
             ])
         })
     })

@@ -44,13 +44,18 @@ export class LLMService {
 
     async stream(args: { history: ReturnType<LLMService['toHistory']>; prompt: string; context: string }) {
         const { context, history, prompt } = args
-        const trimmed = await trimMessages(history, {
+        const trimmed = await this.trimHistory(history)
+        return this.chain.stream({ history: trimmed, prompt, context })
+    }
+
+    // keep only the newest messages that fit the token budget
+    private trimHistory(history: ReturnType<LLMService['toHistory']>) {
+        return trimMessages(history, {
             tokenCounter: this.llm,
             maxTokens: 20000,
             startOn: 'human',
             strategy: 'last',
         })
-        return this.chain.stream({ history: trimmed, prompt, context })
     }
 
     toHistory(messages: { role: MessageRole; content: string }[]) {
@@ -64,6 +69,7 @@ export class LLMService {
     async rewriteQuery(args: { history: ReturnType<LLMService['toHistory']>; prompt: string }) {
         const { history, prompt } = args
         if (history.length === 0) return prompt
-        return this.rewriteChain.invoke({ history, prompt })
+        const trimmed = await this.trimHistory(history)
+        return this.rewriteChain.invoke({ history: trimmed, prompt })
     }
 }
