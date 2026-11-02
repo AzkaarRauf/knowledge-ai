@@ -16,7 +16,6 @@ describe('DepartmentsService', () => {
         department: {
             create: vi.fn(),
             findMany: vi.fn(),
-            findUnique: vi.fn(),
             findUniqueOrThrow: vi.fn(),
             update: vi.fn(),
             delete: vi.fn(),
@@ -35,21 +34,11 @@ describe('DepartmentsService', () => {
     })
 
     describe('create', () => {
-        it('creates the department when the name is free', async () => {
-            db.department.findUnique.mockResolvedValue(null)
+        it('creates the department', async () => {
             db.department.create.mockResolvedValue(department)
 
             await expect(service.create({ name: 'Engineering' })).resolves.toEqual(department)
             expect(db.department.create).toHaveBeenCalledWith({ data: { name: 'Engineering' } })
-        })
-
-        it('throws ConflictException when the name is taken', async () => {
-            db.department.findUnique.mockResolvedValue(department)
-
-            await expect(service.create({ name: 'Engineering' })).rejects.toThrow(
-                new ConflictException('Department name is already taken'),
-            )
-            expect(db.department.create).not.toHaveBeenCalled()
         })
     })
 
@@ -87,8 +76,7 @@ describe('DepartmentsService', () => {
     })
 
     describe('update', () => {
-        it('allows keeping the same name', async () => {
-            db.department.findUnique.mockResolvedValue(department)
+        it('updates the department by id', async () => {
             db.department.update.mockResolvedValue(department)
 
             await expect(service.update(department.id, { name: 'Engineering' })).resolves.toEqual(department)
@@ -96,15 +84,6 @@ describe('DepartmentsService', () => {
                 where: { id: department.id },
                 data: { name: 'Engineering' },
             })
-        })
-
-        it('throws ConflictException when another department has the name', async () => {
-            db.department.findUnique.mockResolvedValue({ ...department, id: 'other-id' })
-
-            await expect(service.update(department.id, { name: 'Engineering' })).rejects.toThrow(
-                new ConflictException('Department name is already taken'),
-            )
-            expect(db.department.update).not.toHaveBeenCalled()
         })
     })
 

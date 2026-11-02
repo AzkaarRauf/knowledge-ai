@@ -33,7 +33,6 @@ export class DepartmentsService {
     }
 
     async update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<DepartmentResponseDto> {
-        if (updateDepartmentDto.name) await this.assertNameAvailable(updateDepartmentDto.name, id)
         return this.db.department.update({ where: { id }, data: updateDepartmentDto })
     }
 
@@ -43,12 +42,5 @@ export class DepartmentsService {
             throw new ConflictException('Department still has users and cannot be deleted')
         }
         return this.db.department.delete({ where: { id } })
-    }
-
-    private async assertNameAvailable(name: string, excludeId?: string) {
-        const existing = await this.db.department.findUnique({ where: { name } })
-        if (existing && existing.id !== excludeId) {
-            throw new ConflictException('Department name is already taken')
-        }
     }
 }

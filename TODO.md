@@ -8,7 +8,7 @@ Pending work vs the assignment, in suggested order.
 
 ## 2. Chat history
 
-- [ ] Stop sending full history to LLM (last N messages or summary)
+- [x] Stop sending full history to LLM (last N messages or summary)
 
 ## 3. API shape
 
