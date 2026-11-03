@@ -37,7 +37,7 @@ export function PageHeader({ title, description, actions, back, className }: Pag
 
 /** Width and padding shared by every non-chat page. */
 export function PageContainer({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div className={cn('mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-8 sm:py-8', className)} {...props} />
+  return <div className={cn('mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:p-8', className)} {...props} />
 }
 
 /** Heading strip inside a card, above a group of fields. */

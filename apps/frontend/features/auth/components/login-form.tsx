@@ -27,14 +27,14 @@ export function LoginForm() {
         {/* soft glow behind the copy */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-40 -right-40 size-[36rem] rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute -top-40 -right-40 size-144 rounded-full bg-white/10 blur-3xl"
         />
         <div className="relative flex items-center gap-2.5">
           <BrandMark className="size-9 bg-white/15 shadow-none ring-1 ring-white/20" />
           <span className="font-semibold tracking-tight">Knowledge AI</span>
         </div>
         <div className="relative max-w-md space-y-8">
-          <h1 className="text-4xl leading-tight font-semibold tracking-tight text-balance">
+          <h1 className="text-4xl/tight font-semibold tracking-tight text-balance">
             Your organization&apos;s knowledge, one question away.
           </h1>
           <ul className="space-y-5">

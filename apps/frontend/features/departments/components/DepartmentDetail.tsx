@@ -161,7 +161,7 @@ function DepartmentForm({ department }: { department: Department }) {
 /** Mirrors the detail layout: title, form card with two rows, action row. */
 export function DepartmentDetailSkeleton() {
   return (
-    <div role="status" aria-label="Loading department" className="mx-auto w-full max-w-4xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+    <div role="status" aria-label="Loading department" className="mx-auto w-full max-w-4xl space-y-6 px-4 py-6 sm:p-8">
       <div className="space-y-2">
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-8 w-48" />

@@ -1,8 +1,15 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "nextjs", "jsx-a11y", "typescript", "import"],
+  "jsPlugins": ["eslint-plugin-better-tailwindcss"],
   "ignorePatterns": [".next/**", "out/**", "build/**", "next-env.d.ts", "components/ui/**"],
+  "settings": {
+    "better-tailwindcss": {
+      "entryPoint": "app/globals.css"
+    }
+  },
   "rules": {
+    "better-tailwindcss/enforce-canonical-classes": "warn",
     "react/rules-of-hooks": "error",
     "react/exhaustive-deps": "warn",
     "typescript/no-explicit-any": "off",
