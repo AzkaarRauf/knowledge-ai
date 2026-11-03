@@ -1,7 +1,6 @@
 import { Job, JobsOptions, Queue } from 'bullmq'
 
 export const QueueNames = {
-    test: 'test',
     documentProcessing: 'documentProcessing',
 } as const
 
@@ -14,12 +13,6 @@ export type TypedQueue<M> = Omit<Queue<JobOf<M>>, 'add'> & {
 }
 
 // job name -> data
-export type TestJobs = {
-    hello: { hello: string }
-    world: { world: string }
-}
-export type TestQueue = TypedQueue<TestJobs>
-
 export type DocumentProcessingJobs = {
     process: { documentId: string; mimetype: string }
 }
