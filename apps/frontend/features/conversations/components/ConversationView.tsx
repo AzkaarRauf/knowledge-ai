@@ -139,7 +139,7 @@ export function MessageListSkeleton() {
     <div role="status" aria-label="Loading messages" className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
       {Array.from({ length: 3 }, (_, i) => (
         <div key={i} className="flex flex-col gap-8">
-          <Skeleton className="ml-auto h-11 w-2/5 rounded-3xl" />
+          <Skeleton className="ml-auto h-11 w-2/5 rounded-2xl" />
           <div className="flex flex-col gap-2">
             <Skeleton className="h-5 w-full" />
             <Skeleton className="h-5 w-11/12" />
@@ -159,7 +159,7 @@ export function ConversationViewSkeleton() {
         <MessageListSkeleton />
       </div>
       <div className="mx-auto w-full max-w-3xl px-4 pb-4">
-        <Skeleton className="h-14 rounded-3xl" />
+        <Skeleton className="h-14 rounded-2xl" />
         <div className="h-6" />
       </div>
     </div>

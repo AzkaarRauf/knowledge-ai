@@ -26,9 +26,12 @@ async function AdminCheck({ children }: { children: ReactNode }) {
 
 function AdminGateSkeleton() {
   return (
-    <div role="status" aria-label="Checking access" className="mx-auto w-full max-w-4xl space-y-4 p-6">
-      <Skeleton className="h-12 w-64" />
-      <Skeleton className="h-64 w-full" />
+    <div role="status" aria-label="Checking access" className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-5 w-80 max-w-full" />
+      </div>
+      <Skeleton className="h-64 w-full rounded-xl" />
     </div>
   )
 }

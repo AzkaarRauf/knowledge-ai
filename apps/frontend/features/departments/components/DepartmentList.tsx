@@ -36,7 +36,7 @@ export function DepartmentList() {
   return (
     <>
       {departments.length === 0 ? (
-        <Empty className="border">
+        <Empty className="border bg-card py-16">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Building2 />
@@ -46,7 +46,7 @@ export function DepartmentList() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
           <Table>
             <TableHeader>
               <TableRow>
@@ -60,9 +60,12 @@ export function DepartmentList() {
             <TableBody>
               {departments.map((department) => (
                 <TableRow key={department.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/departments/${department.id}`} className="underline-offset-4 hover:underline">
-                      {department.name}
+                  <TableCell>
+                    <Link href={`/departments/${department.id}`} className="group flex items-center gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                        <Building2 className="size-4" />
+                      </span>
+                      <span className="font-medium group-hover:underline group-hover:underline-offset-4">{department.name}</span>
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{new Date(department.createdAt).toLocaleString()}</TableCell>
@@ -108,10 +111,10 @@ export function DepartmentList() {
 
 function DepartmentTableSkeleton() {
   return (
-    <div role="status" aria-label="Loading departments" className="rounded-lg border bg-card p-2">
+    <div role="status" aria-label="Loading departments" className="overflow-hidden rounded-xl border bg-card shadow-xs p-2">
       <div className="flex flex-col gap-1">
         {Array.from({ length: 5 }, (_, i) => (
-          <Skeleton key={i} className="h-9" />
+          <Skeleton key={i} className="h-12" />
         ))}
       </div>
     </div>

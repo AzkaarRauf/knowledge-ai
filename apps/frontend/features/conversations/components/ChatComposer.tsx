@@ -35,7 +35,7 @@ export function ChatComposer({ onSend, disabled, autoFocus, className }: ChatCom
         void send()
       }}
       className={cn(
-        'flex items-end gap-2 rounded-3xl border bg-background p-2 pl-4 shadow-sm focus-within:ring-3 focus-within:ring-ring/30',
+        'flex items-end gap-2 rounded-2xl border bg-card p-2 pl-4 shadow-sm transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20',
         className,
       )}
     >
@@ -58,7 +58,7 @@ export function ChatComposer({ onSend, disabled, autoFocus, className }: ChatCom
         autoFocus={autoFocus}
         className="field-sizing-content max-h-52 min-h-9 flex-1 resize-none bg-transparent py-1.5 text-base outline-none placeholder:text-muted-foreground"
       />
-      <Button type="submit" size="icon-lg" className="shrink-0 rounded-full" disabled={!canSend} aria-label="Send message">
+      <Button type="submit" size="icon-lg" className="shrink-0 rounded-xl" disabled={!canSend} aria-label="Send message">
         <ArrowUp />
       </Button>
     </form>

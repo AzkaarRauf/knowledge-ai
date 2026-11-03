@@ -27,9 +27,9 @@ export function ChatSidebar() {
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS)
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col border-r bg-background text-sidebar-foreground md:flex">
       <div className="p-2">
-        <Button variant="ghost" className="w-full justify-start" nativeButton={false} render={<Link href="/chat" />}>
+        <Button variant="outline" className="w-full justify-start" nativeButton={false} render={<Link href="/chat" />}>
           <SquarePen data-icon="inline-start" />
           New chat
         </Button>
@@ -103,14 +103,16 @@ function ConversationList({ search }: { search: string }) {
         ) : (
           groups.map((group) => (
             <section key={group.label} className="mt-4 first:mt-2">
-              <h2 className="px-2 pb-1 text-xs font-medium text-muted-foreground">{group.label}</h2>
+              <h2 className="px-2 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                {group.label}
+              </h2>
               <ul className="flex flex-col gap-0.5">
                 {group.items.map((conversation) => (
                   <li key={conversation.id}>
                     <div
                       className={cn(
                         'group relative flex items-center rounded-lg text-sm hover:bg-sidebar-accent',
-                        conversation.id === conversationId && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                        conversation.id === conversationId && 'bg-sidebar-accent font-medium text-sidebar-accent-foreground',
                       )}
                     >
                       <Link

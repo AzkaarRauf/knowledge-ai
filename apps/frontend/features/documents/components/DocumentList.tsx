@@ -1,6 +1,7 @@
 'use client'
 
 import { ConfirmationDialog } from '@/components/ConfirmationDialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -84,7 +85,7 @@ export function DocumentList({ canManage }: { canManage: boolean }) {
         <DocumentTableSkeleton />
       ) : documents.length === 0 ? (
         hasFilters ? (
-          <Empty className="border">
+          <Empty className="border bg-card py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <SearchX />
@@ -99,7 +100,7 @@ export function DocumentList({ canManage }: { canManage: boolean }) {
             </EmptyContent>
           </Empty>
         ) : (
-          <Empty className="border">
+          <Empty className="border bg-card py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <FileText />
@@ -113,7 +114,7 @@ export function DocumentList({ canManage }: { canManage: boolean }) {
         )
       ) : (
         <>
-          <div className={cn('rounded-lg border bg-card transition-opacity')}>
+          <div className={'overflow-hidden rounded-xl border bg-card shadow-xs'}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -128,9 +129,18 @@ export function DocumentList({ canManage }: { canManage: boolean }) {
               <TableBody>
                 {documents.map((document) => (
                   <TableRow key={document.id}>
-                    <TableCell className="font-medium whitespace-normal break-all">{document.filename}</TableCell>
-                    <TableCell className={cn(!document.department && 'text-muted-foreground')}>
-                      {document.department?.name ?? 'None'}
+                    <TableCell className="whitespace-normal">
+                      <div className="flex items-center gap-3">
+                        <FileTypeIcon filename={document.filename} />
+                        <span className="font-medium break-all">{document.filename}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {document.department ? (
+                        <Badge variant="outline">{document.department.name}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">None</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{new Date(document.createdAt).toLocaleString()}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
@@ -216,12 +226,27 @@ function SortableHead({
   )
 }
 
+/** Small tile with the file extension, e.g. PDF. */
+function FileTypeIcon({ filename }: { filename: string }) {
+  const ext = filename.includes('.') ? filename.split('.').pop()!.slice(0, 4) : ''
+  return (
+    <span className="relative flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+      <FileText className="size-4" />
+      {ext && (
+        <span className="absolute -right-1 -bottom-1 rounded-sm bg-card px-0.5 text-[8px] leading-tight font-bold uppercase ring-1 ring-border">
+          {ext}
+        </span>
+      )}
+    </span>
+  )
+}
+
 function DocumentTableSkeleton() {
   return (
-    <div role="status" aria-label="Loading documents" className="rounded-lg border bg-card p-2">
+    <div role="status" aria-label="Loading documents" className="overflow-hidden rounded-xl border bg-card shadow-xs p-2">
       <div className="flex flex-col gap-1">
         {Array.from({ length: 5 }, (_, i) => (
-          <Skeleton key={i} className="h-9" />
+          <Skeleton key={i} className="h-12" />
         ))}
       </div>
     </div>

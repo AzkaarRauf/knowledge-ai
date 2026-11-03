@@ -2,8 +2,9 @@
 
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { Building2, MessagesSquare, ShieldCheck } from 'lucide-react'
+import { BrandMark } from '@/components/shell/Brand'
 import { buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { GOOGLE_LOGIN_URL } from '@/features/auth/auth.api'
 
 // codes the backend puts in ?error= when google login fails
@@ -12,25 +13,73 @@ const LOGIN_ERRORS: Record<string, string> = {
   google_failed: 'Google sign-in failed. Please try again.',
 }
 
+const HIGHLIGHTS = [
+  { icon: MessagesSquare, title: 'Answers with sources', text: 'Every reply cites the documents it came from.' },
+  { icon: Building2, title: 'Scoped by department', text: 'People only search the knowledge they are allowed to see.' },
+  { icon: ShieldCheck, title: 'Single sign-on', text: 'Invite-only access through your company Google account.' },
+]
+
+/** Split screen: product story on the left, sign-in on the right. */
 export function LoginForm() {
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-xl">Login</CardTitle>
-        <CardDescription>Sign in with your work Google account.</CardDescription>
-      </CardHeader>
+    <main className="grid min-h-dvh flex-1 lg:grid-cols-2">
+      <section className="relative hidden flex-col justify-between overflow-hidden bg-primary p-12 text-primary-foreground lg:flex">
+        {/* soft glow behind the copy */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-40 -right-40 size-[36rem] rounded-full bg-white/10 blur-3xl"
+        />
+        <div className="relative flex items-center gap-2.5">
+          <BrandMark className="size-9 bg-white/15 shadow-none ring-1 ring-white/20" />
+          <span className="font-semibold tracking-tight">Knowledge AI</span>
+        </div>
+        <div className="relative max-w-md space-y-8">
+          <h1 className="text-4xl leading-tight font-semibold tracking-tight text-balance">
+            Your organization&apos;s knowledge, one question away.
+          </h1>
+          <ul className="space-y-5">
+            {HIGHLIGHTS.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="flex gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
+                  <Icon className="size-4" />
+                </span>
+                <div>
+                  <p className="font-medium">{title}</p>
+                  <p className="text-sm text-primary-foreground/70">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="relative text-xs text-primary-foreground/60">© Knowledge AI. All rights reserved.</p>
+      </section>
 
-      <CardContent className="grid gap-4">
-        <Suspense fallback={null}>
-          <LoginError />
-        </Suspense>
-        {/* full page load, not <Link>: the backend redirects to google */}
-        <a href={GOOGLE_LOGIN_URL} className={buttonVariants({ className: 'w-full' })}>
-          <GoogleIcon />
-          Continue with Google
-        </a>
-      </CardContent>
-    </Card>
+      <section className="flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="space-y-2">
+            <BrandMark className="size-10 lg:hidden" />
+            <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
+            <p className="text-sm text-muted-foreground">Use your work Google account to continue.</p>
+          </div>
+          <div className="grid gap-4">
+            <Suspense fallback={null}>
+              <LoginError />
+            </Suspense>
+            {/* full page load, not <Link>: the backend redirects to google */}
+            <a
+              href={GOOGLE_LOGIN_URL}
+              className={buttonVariants({ variant: 'outline', size: 'lg', className: 'h-10 w-full bg-card shadow-xs' })}
+            >
+              <GoogleIcon />
+              Continue with Google
+            </a>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Access is invite-only. If you can&apos;t sign in, ask your admin to add you.
+          </p>
+        </div>
+      </section>
+    </main>
   )
 }
 
@@ -63,7 +112,7 @@ function LoginError() {
   const code = useSearchParams().get('error')
   if (!code) return null
   return (
-    <p role="alert" className="text-sm text-destructive">
+    <p role="alert" className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
       {LOGIN_ERRORS[code] ?? LOGIN_ERRORS.google_failed}
     </p>
   )

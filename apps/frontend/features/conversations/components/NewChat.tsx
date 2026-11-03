@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { publicDepartmentsQueryOptions } from '@/features/departments/api/queries'
 import { getErrorMessage } from '@/lib/errors'
+import { BrandMark } from '@/components/shell/Brand'
 
 const TITLE_MAX_LENGTH = 60
 
@@ -46,7 +47,15 @@ export function NewChat() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-[15vh]">
-      <h1 className="text-2xl font-semibold sm:text-3xl">What can I help with?</h1>
+      <div className="flex flex-col items-center gap-4 text-center">
+        <BrandMark className="size-11" />
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">What can I help with?</h1>
+          <p className="text-sm text-muted-foreground">
+            Pick a department, then ask. Answers come from its documents, with sources.
+          </p>
+        </div>
+      </div>
       <div className="flex w-full max-w-3xl flex-col gap-3">
         {departmentsPending ? (
           <Skeleton role="status" aria-label="Loading departments" className="h-9 w-56" />

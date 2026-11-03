@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { isError, safe } from 'shared'
 import { ConfirmationDialog } from '@/components/ConfirmationDialog'
 import { TextFieldView } from '@/components/form'
+import { PageContainer, PageHeader, SectionTitle } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -28,8 +29,8 @@ export function DepartmentDetail({ departmentId }: { departmentId: string }) {
   if (!department) {
     // load error is already toasted globally; just offer a way back
     return (
-      <div className="mx-auto w-full max-w-4xl p-6">
-        <Empty className="border">
+      <PageContainer>
+        <Empty className="border bg-card py-16">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Building2 />
@@ -42,7 +43,7 @@ export function DepartmentDetail({ departmentId }: { departmentId: string }) {
             </Button>
           </EmptyContent>
         </Empty>
-      </div>
+      </PageContainer>
     )
   }
 
@@ -96,17 +97,25 @@ function DepartmentForm({ department }: { department: Department }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-4 p-6">
-      <h1 className="text-xl font-semibold">Department</h1>
+    <PageContainer className="max-w-4xl">
+      <PageHeader
+        back={{ href: '/departments', label: 'Departments' }}
+        title={department.name}
+        description={isEditing ? 'Editing department details' : undefined}
+      />
 
       <form onSubmit={handleFormSubmit} noValidate>
-        <div className="space-y-4 rounded-lg border bg-card p-6">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+          <SectionTitle title="Details" description="Fields you can change." className="border-b" />
+          <div className="space-y-4 p-6">
+            <DepartmentFormFields form={form} disabled={!isEditing} />
+          </div>
+          <SectionTitle title="System" description="Set by the system; read only." className="border-y" />
+          <div className="grid grid-cols-1 gap-4 p-6 lg:grid-cols-3">
             <TextFieldView label="Department ID" value={department.id} disabled copyable />
             <TextFieldView label="Created" value={new Date(department.createdAt).toLocaleString()} disabled />
             <TextFieldView label="Updated" value={new Date(department.updatedAt).toLocaleString()} disabled />
           </div>
-          <DepartmentFormFields form={form} disabled={!isEditing} />
         </div>
 
         <div className="mt-4 flex justify-end gap-3">
@@ -145,16 +154,19 @@ function DepartmentForm({ department }: { department: Department }) {
         confirmText="Delete"
         destructive
       />
-    </div>
+    </PageContainer>
   )
 }
 
 /** Mirrors the detail layout: title, form card with two rows, action row. */
 export function DepartmentDetailSkeleton() {
   return (
-    <div role="status" aria-label="Loading department" className="mx-auto w-full max-w-4xl space-y-4 p-6">
-      <Skeleton className="h-7 w-32" />
-      <div className="space-y-4 rounded-lg border bg-card p-6">
+    <div role="status" aria-label="Loading department" className="mx-auto w-full max-w-4xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-8 w-48" />
+      </div>
+      <div className="space-y-4 overflow-hidden rounded-xl border bg-card p-6 shadow-xs">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {Array.from({ length: 3 }, (_, i) => (
             <FieldSkeleton key={i} />
