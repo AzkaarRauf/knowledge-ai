@@ -27,6 +27,14 @@ export class S3Service {
         await this.s3.send(new PutObjectCommand({ Bucket: this.bucket, Key, Body: args.buffer }))
     }
 
+    async download(key: string): Promise<Buffer> {
+        const { Body } = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }))
+        if (!Body) {
+            throw new Error(`Empty s3 object: ${key}`)
+        }
+        return Buffer.from(await Body.transformToByteArray())
+    }
+
     // short-lived url to read a file; the browser saves it under downloadName
     getReadUrl(key: string, downloadName: string, expiresIn = 300) {
         const command = new GetObjectCommand({

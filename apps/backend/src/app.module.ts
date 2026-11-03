@@ -1,4 +1,5 @@
 import { createKeyv } from '@keyv/redis'
+import { BullModule } from '@nestjs/bullmq'
 import { CacheModule } from '@nestjs/cache-manager'
 import { ArgumentsHost, Catch, HttpException, Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE, BaseExceptionFilter } from '@nestjs/core'
@@ -23,10 +24,10 @@ import { RequestIdMiddleware } from './middlewares/request-id/request-id.middlew
 import { PrismaModule } from './prisma/prisma.module.js'
 import { PrismaService } from './prisma/prisma.service.js'
 import { RAGModule } from './rag/rag.module.js'
+import { REDIS_CLIENT, RedisClient } from './redis/redis.constants.js'
+import { RedisModule } from './redis/redis.module.js'
 import { S3Module } from './s3/s3.module.js'
 import { UsersModule } from './users/users.module.js'
-import { RedisModule } from './redis/redis.module.js'
-import { REDIS_CLIENT, RedisClient } from './redis/redis.constants.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -69,6 +70,9 @@ class HttpExceptionFilter extends BaseExceptionFilter {
                 redisStore.setTtl(env.REDIS_CACHE_TTL_MS ?? 5 * 1000)
                 return { stores: [redisStore] }
             },
+        }),
+        BullModule.forRoot({
+            connection: { url: env.REDIS_CONNECTION_STRING },
         }),
     ],
     controllers: [AppController],

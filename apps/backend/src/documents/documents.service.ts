@@ -1,16 +1,11 @@
-import { TextLoader } from '@langchain/classic/document_loaders/fs/text'
-import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
-import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
-import { DocumentLoader } from '@langchain/core/document_loaders/base'
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
+import { InjectQueue } from '@nestjs/bullmq'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
-import { createHash, randomUUID } from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
 import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
-import { EmbeddingService } from 'src/embedding/embedding.service.js'
 import { Prisma } from 'src/generated/prisma/client.js'
-import { join, sql } from 'src/generated/prisma/internal/prismaNamespace.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
+import { type DocumentProcessingQueue, QueueNames } from 'src/queue/queue.constants.js'
 import { S3Service } from 'src/s3/s3.service.js'
 
 // every document response carries its department
@@ -24,7 +19,7 @@ export class DocumentsService {
     constructor(
         private s3Service: S3Service,
         private db: PrismaService,
-        private embeddingService: EmbeddingService,
+        @InjectQueue(QueueNames.documentProcessing) private documentProcessingQueue: DocumentProcessingQueue,
     ) {}
 
     async upload(args: { file: Express.Multer.File; userId: string; departmentId: string | null }): Promise<{
@@ -41,31 +36,9 @@ export class DocumentsService {
             return { document: existingDocument, isNew: false }
         }
 
-        const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype })
-        let loader: DocumentLoader
-        switch (file.mimetype) {
-            case 'text/plain':
-                this.assertPlainText(file.buffer)
-                loader = new TextLoader(blob)
-                break
-            case 'application/pdf':
-                loader = new PDFLoader(blob, { splitPages: false })
-                break
-            default:
-                loader = new DocxLoader(blob)
-                break
+        if (file.mimetype === 'text/plain') {
+            this.assertPlainText(file.buffer)
         }
-        const docs = await loader.load()
-        for (const doc of docs) {
-            doc.metadata.source = file.originalname
-        }
-
-        // chunking
-        const textSplitter = new RecursiveCharacterTextSplitter({ chunkOverlap: 200, chunkSize: 1000 })
-        const split = await textSplitter.splitDocuments(docs)
-
-        // embedding
-        const embeds = await this.embeddingService.embedDocuments(split)
 
         // save document to object store
         const key = this.s3Service.generateKey({
@@ -79,34 +52,30 @@ export class DocumentsService {
             key,
         })
 
-        // save document and chunks in db
         const document = await safe(
-            this.db.$transaction(async (tx) => {
-                const document = await tx.document.create({
-                    data: { fileHash, filename: file.originalname, s3key: key, userId, departmentId },
-                    include: documentInclude,
-                })
-                const rows = split.map(
-                    (item, i) =>
-                        sql`(
-                                ${randomUUID()}::uuid,
-                                ${item.pageContent},
-                                to_tsvector('english', ${item.pageContent}),
-                                ${`[${embeds[i].join(',')}]`}::vector,
-                                ${document.id}::uuid, ${JSON.stringify(item.metadata)}::jsonb,
-                                now()
-                              )`,
-                )
-                await tx.$executeRaw`
-                      INSERT INTO "DocumentChunk" ("id", "content", "contentSearch", "embedding", "documentId", "metadata", "updatedAt")
-                      VALUES ${join(rows)}`
-
-                return document
+            this.db.document.create({
+                data: { fileHash, filename: file.originalname, s3key: key, userId, departmentId },
+                include: documentInclude,
             }),
         )
         if (isError(document)) {
             void this.s3Service.delete(key).catch((e) => this.logger.error(e))
             throw document
+        }
+
+        // chunking and embedding run in the worker. jobId = documentId so the same doc is never queued twice
+        const job = await safe(
+            this.documentProcessingQueue.add(
+                'process',
+                { documentId: document.id, mimetype: file.mimetype },
+                { jobId: document.id },
+            ),
+        )
+        if (isError(job)) {
+            // roll back, else the hash check would return this chunkless doc forever
+            await this.db.document.delete({ where: { id: document.id } }).catch((e) => this.logger.error(e))
+            void this.s3Service.delete(key).catch((e) => this.logger.error(e))
+            throw job
         }
         return { document, isNew: true }
     }

@@ -7,6 +7,7 @@ allowBuilds:
     "@scarf/scarf": true
     bcrypt: true
     esbuild: true
+    msgpackr-extract: true
     prisma: true
     prisma-zod-generator: true
     sharp: false
