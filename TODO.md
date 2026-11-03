@@ -20,9 +20,9 @@ Pending work vs the assignment, in suggested order.
 - [ ] ~~Search, Analytics, Admin modules~~
 - [ ] ~~Let normal users upload/list documents~~
 - [x] Let normal users view docs (no upload)
-  - `GET /documents` + `GET /documents/:id` open to `USER`; upload + delete stay `ADMIN` only
-  - users see shared docs (no conversation) + docs from their own conversations
-  - frontend: Documents nav + page for all roles; upload button + delete column only for admins
+    - `GET /documents` + `GET /documents/:id` open to `USER`; upload + delete stay `ADMIN` only
+    - users see shared docs (no conversation) + docs from their own conversations
+    - frontend: Documents nav + page for all roles; upload button + delete column only for admins
 
 ## 4. DB tables + design
 
@@ -39,7 +39,7 @@ Pending work vs the assignment, in suggested order.
 
 ## 6. Background processing + Redis
 
-- [ ] Redis setup
+- [x] Redis setup
 - [ ] Queue + worker for document processing (BullMQ)
 - [ ] Document status field (`PENDING`/`PROCESSING`/`DONE`/`FAILED`)
 - [ ] Redis cache / locking

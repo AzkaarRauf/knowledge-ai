@@ -1,3 +1,4 @@
+import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ZodResponse } from 'nestjs-zod'
 import { uuidSchema } from 'src/common/schemas/uuid.schema.js'
@@ -12,7 +13,7 @@ import { SkipAuth } from 'src/decorators/skip-auth/skip-auth.decorator.js'
 import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 
 @UseRoles({ roles: [Role.ADMIN] })
-@Controller('departments')
+@Controller(CACHE_RESOURCE.departments)
 @Cacheable()
 export class DepartmentsController {
     constructor(private readonly departmentsService: DepartmentsService) {}

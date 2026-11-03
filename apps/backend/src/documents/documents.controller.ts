@@ -1,3 +1,4 @@
+import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
 import {
     Body,
     Controller,
@@ -36,7 +37,7 @@ import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 // normal users can view docs; upload and delete stay admin only
 @UseRoles({ roles: [Role.USER] })
 @ApiBearerAuth()
-@Controller('documents')
+@Controller(CACHE_RESOURCE.documents)
 @Cacheable()
 export class DocumentsController {
     constructor(private readonly documentsService: DocumentsService) {}

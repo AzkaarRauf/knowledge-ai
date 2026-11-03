@@ -1,3 +1,4 @@
+import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
 import {
     Body,
     Controller,
@@ -37,7 +38,7 @@ import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 
 @UseRoles({ roles: [Role.USER] })
 @ApiBearerAuth()
-@Controller('conversations')
+@Controller(CACHE_RESOURCE.conversations)
 @Cacheable()
 export class ConversationsController {
     constructor(private readonly conversationsService: ConversationsService) {}

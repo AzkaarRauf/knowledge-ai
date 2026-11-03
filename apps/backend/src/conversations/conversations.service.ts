@@ -17,6 +17,8 @@ import { UpdateConversationRequestDto } from './dto/update-conversation-request.
 import { UpdateConversationResponseDto } from './dto/update-conversation-response.dto.js'
 import { FeedbackResponseDto } from './dto/feedback-response.dto.js'
 import { UpsertFeedbackRequestDto } from './dto/upsert-feedback-request.dto.js'
+import { CacheVersionService } from 'src/redis/cache-version.service.js'
+import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
 
 @Injectable()
 export class ConversationsService {
@@ -26,6 +28,7 @@ export class ConversationsService {
         private db: PrismaService,
         private ragService: RAGService,
         private llmService: LLMService,
+        private cacheVersionService: CacheVersionService,
     ) {}
 
     async chat(args: { id: string; userId: string; chatDto: ChatRequestDto; res: Response }) {
@@ -94,6 +97,7 @@ export class ConversationsService {
                     ],
                 }),
             ])
+            await this.cacheVersionService.inc([CACHE_RESOURCE.conversations])
         } catch (e) {
             this.logger.error(e)
             writeEvent('error', 'Something went wrong')

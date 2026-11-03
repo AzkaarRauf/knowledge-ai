@@ -25,6 +25,8 @@ import { PrismaService } from './prisma/prisma.service.js'
 import { RAGModule } from './rag/rag.module.js'
 import { S3Module } from './s3/s3.module.js'
 import { UsersModule } from './users/users.module.js'
+import { RedisModule } from './redis/redis.module.js'
+import { REDIS_CLIENT, RedisClient } from './redis/redis.constants.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -57,15 +59,15 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         EmbeddingModule,
         LLMModule,
         RAGModule,
+        RedisModule,
         CacheModule.registerAsync({
+            imports: [RedisModule],
+            inject: [REDIS_CLIENT],
             isGlobal: true,
-            useFactory: async () => {
-                const redisStore = createKeyv(env.REDIS_CONNECTION_STRING)
+            useFactory: async (client: RedisClient) => {
+                const redisStore = createKeyv(client)
                 redisStore.setTtl(env.REDIS_CACHE_TTL_MS ?? 5 * 1000)
-                redisStore.on('error', (err) => console.error('Redis error:', err))
-                return {
-                    stores: [redisStore],
-                }
+                return { stores: [redisStore] }
             },
         }),
     ],

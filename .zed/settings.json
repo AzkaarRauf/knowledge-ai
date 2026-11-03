@@ -9,24 +9,6 @@
                     "tsdk": "apps/backend/node_modules/typescript/lib"
                 }
             }
-        },
-        "oxlint": {
-            "initialization_options": {
-                "settings": {
-                    "run": "onType",
-                    "typeAware": true,
-                    "fixKind": "safe_fix",
-                    "unusedDisableDirectives": "deny"
-                }
-            }
-        },
-        "oxfmt": {
-            "initialization_options": {
-                "settings": {
-                    "fmt.configPath": null,
-                    "run": "onSave"
-                }
-            }
         }
     },
     "languages": {
@@ -35,7 +17,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxlint", "oxfmt", "!eslint", "..."],
             "formatter": [
                 {
                     "language_server": {
@@ -52,7 +33,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxlint", "oxfmt", "!eslint", "..."],
             "formatter": [
                 {
                     "language_server": {
@@ -69,7 +49,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxlint", "oxfmt", "!eslint", "..."],
             "formatter": [
                 {
                     "language_server": {
@@ -86,7 +65,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxfmt", "..."],
             "formatter": [
                 {
                     "language_server": {
@@ -100,7 +78,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxfmt", "..."],
             "formatter": [
                 {
                     "language_server": {
@@ -114,7 +91,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxfmt", "..."],
             "formatter": [
                 {
                     "language_server": {
@@ -128,7 +104,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxfmt", "..."],
             "formatter": [
                 {
                     "language_server": {
@@ -142,7 +117,6 @@
             "prettier": {
                 "allowed": false
             },
-            "language_servers": ["oxfmt", "..."],
             "formatter": [
                 {
                     "language_server": {

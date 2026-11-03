@@ -1,3 +1,4 @@
+import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { ZodResponse } from 'nestjs-zod'
@@ -12,7 +13,7 @@ import { Cacheable } from 'src/decorators/cacheable/cacheable.decorator.js'
 
 @UseRoles({ roles: [Role.ADMIN] })
 @ApiBearerAuth()
-@Controller('users')
+@Controller(CACHE_RESOURCE.users)
 @Cacheable()
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}

@@ -4,6 +4,7 @@ import { type Response } from 'express'
 import { LLMService } from 'src/llm/llm.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { RAGService } from 'src/rag/rag.service.js'
+import { CacheVersionService } from 'src/redis/cache-version.service.js'
 import { ConversationsService } from './conversations.service.js'
 
 const id = '0b8f8f5e-3c1a-4d2b-9a43-7c1d1f0a2e33'
@@ -26,6 +27,7 @@ describe('ConversationsService', () => {
     }
     const ragService = { retrieveDocumentChunks: vi.fn() }
     const llmService = { toHistory: vi.fn(), rewriteQuery: vi.fn(), stream: vi.fn() }
+    const cacheVersionService = { get: vi.fn(), inc: vi.fn() }
     const res = { setHeaders: vi.fn(), flushHeaders: vi.fn(), write: vi.fn(), end: vi.fn() }
 
     // everything written to the response, joined
@@ -41,6 +43,7 @@ describe('ConversationsService', () => {
                 { provide: PrismaService, useValue: db },
                 { provide: RAGService, useValue: ragService },
                 { provide: LLMService, useValue: llmService },
+                { provide: CacheVersionService, useValue: cacheVersionService },
             ],
         }).compile()
 
@@ -146,6 +149,18 @@ describe('ConversationsService', () => {
             })
         })
 
+        it('clears conversations cache after saving, before the done event', async () => {
+            llmService.stream.mockResolvedValue(fakeStream(['Hello']))
+            cacheVersionService.inc.mockImplementation(() => {
+                // done event must not be sent yet, so client refetch gets fresh data
+                expect(written()).not.toContain('event: done')
+            })
+
+            await chat()
+
+            expect(cacheVersionService.inc).toHaveBeenCalledWith(['conversations'])
+        })
+
         it('sends a generic error event and saves nothing when the stream fails', async () => {
             llmService.stream.mockResolvedValue(fakeStream(['partial'], new Error('gemini secret details')))
 
@@ -155,6 +170,7 @@ describe('ConversationsService', () => {
             expect(written()).not.toContain('gemini secret details')
             expect(written().endsWith('event: done\ndata: \n\n')).toBe(true)
             expect(db.$transaction).not.toHaveBeenCalled()
+            expect(cacheVersionService.inc).not.toHaveBeenCalled()
             expect(res.end).toHaveBeenCalledTimes(1)
         })
 
