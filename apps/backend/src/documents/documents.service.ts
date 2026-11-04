@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
 import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
 import { Prisma } from 'src/generated/prisma/client.js'
+import { DocumentStatus } from 'src/generated/prisma/enums.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { type DocumentProcessingQueue, QueueNames } from 'src/queue/queue.constants.js'
 import { S3Service } from 'src/s3/s3.service.js'
@@ -32,6 +33,10 @@ export class DocumentsService {
             where: { fileHash, userId, departmentId },
             include: documentInclude,
         })
+        if (existingDocument?.status === DocumentStatus.FAILED) {
+            // same file again after a failed run means try again
+            return { document: await this.reprocess(existingDocument, file.mimetype), isNew: false }
+        }
         if (existingDocument) {
             return { document: existingDocument, isNew: false }
         }
@@ -78,6 +83,29 @@ export class DocumentsService {
             throw job
         }
         return { document, isNew: true }
+    }
+
+    private async reprocess(document: Document, mimetype: string): Promise<Document> {
+        // set PENDING before enqueue, else it could overwrite the worker's PROCESSING
+        const updated = await this.db.document.update({
+            where: { id: document.id },
+            data: { status: DocumentStatus.PENDING },
+            include: documentInclude,
+        })
+        const job = await safe(
+            (async () => {
+                // the failed job still holds jobId = documentId, so add() would be a no-op without this
+                await this.documentProcessingQueue.remove(document.id)
+                return this.documentProcessingQueue.add('process', { documentId: document.id, mimetype }, { jobId: document.id })
+            })(),
+        )
+        if (isError(job)) {
+            await this.db.document
+                .update({ where: { id: document.id }, data: { status: DocumentStatus.FAILED } })
+                .catch((e) => this.logger.error(e))
+            throw job
+        }
+        return updated
     }
 
     // txt has no magic number, so the validator trusts the client mimetype.

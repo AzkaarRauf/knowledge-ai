@@ -3,9 +3,14 @@ import { isoDateSchema } from '../common/date.schema.js'
 import { listQuerySchema, paginatedSchema } from '../common/pagination.schema.js'
 import { DOCUMENT_MAX_SIZE, DOCUMENT_MIME_TYPES } from '../../constants/document.constants.js'
 
+// PENDING until the worker picks it up; only DONE docs are searchable
+export const documentStatusSchema = z.enum(['PENDING', 'PROCESSING', 'DONE', 'FAILED'])
+export type DocumentStatus = z.infer<typeof documentStatusSchema>
+
 export const documentSchema = z.object({
     id: z.uuid(),
     filename: z.string(),
+    status: documentStatusSchema,
     conversationId: z.uuid().nullable(),
     department: z.object({ id: z.uuid(), name: z.string() }).nullable(),
     createdAt: isoDateSchema,

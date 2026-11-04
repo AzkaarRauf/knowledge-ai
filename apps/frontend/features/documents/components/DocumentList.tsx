@@ -1,7 +1,7 @@
 'use client'
 
 import { ConfirmationDialog } from '@/components/ConfirmationDialog'
-import { Badge } from '@/components/ui/badge'
+import { Badge, type badgeVariants } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -12,22 +12,29 @@ import { DocumentListPagination } from '@/features/documents/components/Document
 import { DocumentListToolbar } from '@/features/documents/components/DocumentListToolbar'
 import { useDeleteDocumentMutation } from '@/features/documents/hooks/useDeleteDocumentMutation'
 import { useDocumentListParams } from '@/features/documents/hooks/useDocumentListParams'
-import { type Document, type ListDocumentsQuery } from '@/features/documents/schemas'
+import { type Document, type DocumentStatus, type ListDocumentsQuery } from '@/features/documents/schemas'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, ArrowUpDown, Download, FileText, SearchX, Trash2 } from 'lucide-react'
+import { type VariantProps } from 'class-variance-authority'
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, FileText, Loader2, SearchX, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { DOCUMENT_SORT_FIELDS, isError, safe } from 'shared'
 import { toast } from 'sonner'
 
+type BadgeProps = VariantProps<typeof badgeVariants>
+
 type SortField = (typeof DOCUMENT_SORT_FIELDS)[number]
+
+const isInFlight = ({ status }: Document) => status === 'PENDING' || status === 'PROCESSING'
 
 // canManage shows admin-only actions (delete); download is for everyone
 export function DocumentList({ canManage }: { canManage: boolean }) {
   const { params, query, hrefFor, setParams } = useDocumentListParams()
   const { data, isPending } = useQuery({
     ...documentsQueryOptions(params),
+    // the worker updates status in the background, so poll until every doc on the page settles
+    refetchInterval: (q) => (q.state.data?.data.some(isInFlight) ? 3000 : false),
   })
   const documents = data?.data ?? []
   const totalPages = data?.meta.totalPages ?? 0
@@ -119,6 +126,7 @@ export function DocumentList({ canManage }: { canManage: boolean }) {
               <TableHeader>
                 <TableRow>
                   <SortableHead field="filename" label="Name" query={query} onSort={handleSort} />
+                  <TableHead>Status</TableHead>
                   <TableHead>Department</TableHead>
                   <SortableHead field="createdAt" label="Uploaded" query={query} onSort={handleSort} />
                   <TableHead className={canManage ? 'w-20' : 'w-12'}>
@@ -134,6 +142,9 @@ export function DocumentList({ canManage }: { canManage: boolean }) {
                         <FileTypeIcon filename={document.filename} />
                         <span className="font-medium break-all">{document.filename}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <DocumentStatusBadge status={document.status} />
                     </TableCell>
                     <TableCell>
                       {document.department ? (
@@ -223,6 +234,31 @@ function SortableHead({
         <Icon data-icon="inline-end" className={cn(!isActive && 'text-muted-foreground')} />
       </Button>
     </TableHead>
+  )
+}
+
+const STATUS_BADGE = {
+  PENDING: { label: 'Queued', variant: 'secondary' },
+  PROCESSING: { label: 'Processing', variant: 'default' },
+  DONE: { label: 'Ready', variant: 'success' },
+  FAILED: { label: 'Failed', variant: 'destructive' },
+} as const satisfies Record<DocumentStatus, { label: string; variant: BadgeProps['variant'] }>
+
+function DocumentStatusBadge({ status }: { status: DocumentStatus }) {
+  const { label, variant } = STATUS_BADGE[status]
+  if (status === 'FAILED') {
+    return (
+      <Tooltip>
+        <TooltipTrigger render={<Badge variant={variant} tabIndex={0} />}>{label}</TooltipTrigger>
+        <TooltipContent>Could not be processed. Upload the same file again to retry.</TooltipContent>
+      </Tooltip>
+    )
+  }
+  return (
+    <Badge variant={variant}>
+      {status === 'PROCESSING' && <Loader2 className="size-3 animate-spin" />}
+      {label}
+    </Badge>
   )
 }
 

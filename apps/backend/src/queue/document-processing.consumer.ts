@@ -7,8 +7,11 @@ import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Logger } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { EmbeddingService } from 'src/embedding/embedding.service.js'
+import { DocumentStatus } from 'src/generated/prisma/enums.js'
 import { join, sql } from 'src/generated/prisma/internal/prismaNamespace.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
+import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
+import { CacheVersionService } from 'src/redis/cache-version.service.js'
 import { S3Service } from 'src/s3/s3.service.js'
 import { DocumentProcessingJobs, JobOf, QueueNames } from './queue.constants.js'
 
@@ -20,6 +23,7 @@ export class DocumentProcessingConsumer extends WorkerHost {
         private db: PrismaService,
         private s3Service: S3Service,
         private embeddingService: EmbeddingService,
+        private cacheVersionService: CacheVersionService,
     ) {
         super()
     }
@@ -27,8 +31,22 @@ export class DocumentProcessingConsumer extends WorkerHost {
     async process(job: JobOf<DocumentProcessingJobs>) {
         switch (job.name) {
             case 'process':
-                return this.processDocument(job.data)
+                try {
+                    return await this.processDocument(job.data)
+                } catch (e) {
+                    // attemptsMade counts past tries only, so +1 is this one. FAILED only once no retry is left
+                    if (job.attemptsMade + 1 >= (job.opts.attempts ?? 1)) {
+                        await this.setStatus(job.data.documentId, DocumentStatus.FAILED).catch((err) => this.logger.error(err))
+                    }
+                    throw e
+                }
         }
+    }
+
+    // updateMany so a doc deleted mid-job does not throw. bump cache so lists show the new status
+    private async setStatus(documentId: string, status: DocumentStatus) {
+        await this.db.document.updateMany({ where: { id: documentId }, data: { status } })
+        await this.cacheVersionService.inc([CACHE_RESOURCE.documents])
     }
 
     private async processDocument({ documentId, mimetype }: DocumentProcessingJobs['process']) {
@@ -41,6 +59,7 @@ export class DocumentProcessingConsumer extends WorkerHost {
             this.logger.warn(`Document ${documentId} not found, skipping`)
             return
         }
+        await this.setStatus(documentId, DocumentStatus.PROCESSING)
 
         const buffer = await this.s3Service.download(document.s3key)
         const blob = new Blob([new Uint8Array(buffer)], { type: mimetype })
@@ -65,14 +84,16 @@ export class DocumentProcessingConsumer extends WorkerHost {
         const textSplitter = new RecursiveCharacterTextSplitter({ chunkOverlap: 200, chunkSize: 1000 })
         const split = await textSplitter.splitDocuments(docs)
         if (split.length === 0) {
-            this.logger.warn(`Document ${documentId} has no text, skipping`)
+            // retry would give the same result, so fail now
+            this.logger.warn(`Document ${documentId} has no text, marking failed`)
+            await this.setStatus(documentId, DocumentStatus.FAILED)
             return
         }
 
         // embedding
         const embeds = await this.embeddingService.embedDocuments(split)
 
-        // delete old chunks first so a retry does not duplicate them
+        // delete old chunks first so a retry does not duplicate them. status flips to DONE with the chunks
         await this.db.$transaction(async (tx) => {
             await tx.documentChunk.deleteMany({ where: { documentId } })
             const rows = split.map(
@@ -89,6 +110,8 @@ export class DocumentProcessingConsumer extends WorkerHost {
             await tx.$executeRaw`
                   INSERT INTO "DocumentChunk" ("id", "content", "contentSearch", "embedding", "documentId", "metadata", "updatedAt")
                   VALUES ${join(rows)}`
+            await tx.document.updateMany({ where: { id: documentId }, data: { status: DocumentStatus.DONE } })
         })
+        await this.cacheVersionService.inc([CACHE_RESOURCE.documents])
     }
 }

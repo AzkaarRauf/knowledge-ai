@@ -1,6 +1,7 @@
 import {
   documentDownloadUrlSchema,
   documentSchema,
+  documentStatusSchema,
   listDocumentsQuerySchema,
   uploadDocumentBodySchema,
   uploadDocumentRequestSchema,
@@ -8,9 +9,13 @@ import {
 import { z } from 'zod'
 import { paginatedSchema } from '@/lib/schemas'
 
+export const DocumentStatusSchema = documentStatusSchema
+export type DocumentStatus = z.infer<typeof DocumentStatusSchema>
+
 export const DocumentSchema = z.object({
   id: z.string().catch(''),
   filename: z.string().catch(''),
+  status: DocumentStatusSchema.catch('DONE'),
   conversationId: z.string().nullable().catch(null),
   department: z
     .object({ id: z.string().catch(''), name: z.string().catch('') })

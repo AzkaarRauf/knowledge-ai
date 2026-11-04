@@ -13,9 +13,9 @@ const txtFile = (text: string) =>
 
 describe('DocumentsService', () => {
     let service: DocumentsService
-    const db = { document: { findFirst: vi.fn(), create: vi.fn(), delete: vi.fn() } }
+    const db = { document: { findFirst: vi.fn(), create: vi.fn(), delete: vi.fn(), update: vi.fn() } }
     const s3Service = { generateKey: vi.fn(), upload: vi.fn(), delete: vi.fn() }
-    const queue = { add: vi.fn() }
+    const queue = { add: vi.fn(), remove: vi.fn() }
 
     beforeEach(async () => {
         vi.resetAllMocks()
@@ -44,6 +44,36 @@ describe('DocumentsService', () => {
             })
             expect(s3Service.upload).not.toHaveBeenCalled()
             expect(queue.add).not.toHaveBeenCalled()
+        })
+
+        it('requeues a failed document when the same file is uploaded again', async () => {
+            const pending = { ...document, status: 'PENDING' }
+            db.document.findFirst.mockResolvedValue({ ...document, status: 'FAILED' })
+            db.document.update.mockResolvedValue(pending)
+
+            await expect(service.upload({ file: txtFile('hello'), userId, departmentId: null })).resolves.toEqual({
+                document: pending,
+                isNew: false,
+            })
+            expect(db.document.update).toHaveBeenCalledWith(
+                expect.objectContaining({ where: { id: document.id }, data: { status: 'PENDING' } }),
+            )
+            expect(queue.remove).toHaveBeenCalledWith(document.id)
+            expect(queue.add).toHaveBeenCalledWith(
+                'process',
+                { documentId: document.id, mimetype: 'text/plain' },
+                { jobId: document.id },
+            )
+            expect(s3Service.upload).not.toHaveBeenCalled()
+        })
+
+        it('sets a requeued document back to failed when enqueue fails', async () => {
+            db.document.findFirst.mockResolvedValue({ ...document, status: 'FAILED' })
+            db.document.update.mockResolvedValue({ ...document, status: 'PENDING' })
+            queue.add.mockRejectedValue(new Error('redis down'))
+
+            await expect(service.upload({ file: txtFile('hello'), userId, departmentId: null })).rejects.toThrow('redis down')
+            expect(db.document.update).toHaveBeenLastCalledWith({ where: { id: document.id }, data: { status: 'FAILED' } })
         })
 
         it('rejects binary content sent as text/plain', async () => {

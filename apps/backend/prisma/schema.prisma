@@ -59,11 +59,20 @@ model Department {
   conversations Conversation[]
 }
 
+// set by the processing worker. only DONE docs have chunks
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
 model Document {
   id             String          @id @default(uuid()) @db.Uuid
   filename       String
   fileHash       String
   s3key          String
+  status         DocumentStatus  @default(PENDING)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   documentChunks DocumentChunk[]
