@@ -1,17 +1,17 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { getErrorMessage } from '@/lib/errors'
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
-import { toast, Toaster } from 'sonner'
+import { Toaster } from 'sonner'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
         queryCache: new QueryCache({
-          onError: (error) => toast.error(getErrorMessage(error)),
+          onError: (error) => showErrorToast(error),
         }),
         defaultOptions: { queries: { retry: 0, staleTime: 10 * 1000 } },
       }),

@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { revalidateLogic } from '@tanstack/react-form'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
@@ -19,7 +20,7 @@ import { isNameTakenError, setNameTakenError } from '@/features/departments/comp
 import { useCreateDepartmentMutation } from '@/features/departments/hooks/useCreateDepartmentMutation'
 import { type DepartmentFormInput, DepartmentFormSchema } from '@/features/departments/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
-import { ApiValidationError, getErrorMessage } from '@/lib/errors'
+import { ApiValidationError } from '@/lib/errors'
 
 export function CreateDepartmentDialog() {
   const [open, setOpen] = useState(false)
@@ -56,7 +57,7 @@ function CreateDepartmentForm({ onDone }: { onDone: () => void }) {
       const res = await safe(createMutation.mutateAsync(parsed))
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
       if (isNameTakenError(res)) return setNameTakenError(formApi, parsed.name)
-      if (isError(res)) return toast.error(getErrorMessage(res))
+      if (isError(res)) return showErrorToast(res)
       toast.success(`"${res.name}" created`)
       onDone()
     },

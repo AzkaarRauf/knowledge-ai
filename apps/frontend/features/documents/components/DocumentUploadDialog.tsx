@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { revalidateLogic } from '@tanstack/react-form'
 import { useQuery } from '@tanstack/react-query'
 import { Upload } from 'lucide-react'
@@ -22,7 +23,7 @@ import { departmentsQueryOptions } from '@/features/departments/api/queries'
 import { useUploadDocumentMutation } from '@/features/documents/hooks/useUploadDocumentMutation'
 import { type DocumentUploadFormInput, DocumentUploadFormSchema } from '@/features/documents/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
-import { ApiValidationError, getErrorMessage } from '@/lib/errors'
+import { ApiValidationError } from '@/lib/errors'
 
 export function DocumentUploadDialog() {
   const [open, setOpen] = useState(false)
@@ -61,7 +62,7 @@ function DocumentUploadForm({ onDone }: { onDone: () => void }) {
       const parsed = DocumentUploadFormSchema.parse(value)
       const res = await safe(uploadMutation.mutateAsync(parsed))
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
-      if (isError(res)) return toast.error(getErrorMessage(res))
+      if (isError(res)) return showErrorToast(res)
       if (res.isNew) toast.success(`"${res.document.filename}" uploaded`)
       else toast.info(`"${res.document.filename}" is already uploaded`)
       onDone()

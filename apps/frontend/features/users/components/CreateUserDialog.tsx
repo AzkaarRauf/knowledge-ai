@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { revalidateLogic } from '@tanstack/react-form'
 import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
@@ -27,7 +28,7 @@ import {
 import { useCreateUserMutation } from '@/features/users/hooks/useCreateUserMutation'
 import { type CreateUserFormInput, CreateUserFormSchema, ROLE_OPTIONS } from '@/features/users/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
-import { ApiValidationError, getErrorMessage } from '@/lib/errors'
+import { ApiValidationError } from '@/lib/errors'
 
 const emptyUserForm: CreateUserFormInput = { name: '', email: '', departmentId: '', role: 'USER' }
 
@@ -67,7 +68,7 @@ function CreateUserForm({ onDone }: { onDone: () => void }) {
       const res = await safe(createMutation.mutateAsync(parsed))
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
       if (isEmailTakenError(res)) return setEmailTakenError(formApi, parsed.email)
-      if (isError(res)) return toast.error(getErrorMessage(res))
+      if (isError(res)) return showErrorToast(res)
       toast.success(`"${res.name}" created`)
       onDone()
     },

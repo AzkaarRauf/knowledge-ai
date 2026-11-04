@@ -1,13 +1,12 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { ThumbsDown, ThumbsUp } from 'lucide-react'
 import { isError, safe } from 'shared'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useDeleteMessageFeedbackMutation } from '@/features/conversations/hooks/useDeleteMessageFeedbackMutation'
 import { useUpsertMessageFeedbackMutation } from '@/features/conversations/hooks/useUpsertMessageFeedbackMutation'
 import { type FeedbackRating, type Message } from '@/features/conversations/schemas'
-import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 
 /** Thumbs up/down under an assistant reply. Clicking the active thumb clears it. */
@@ -30,7 +29,7 @@ export function MessageFeedback({
       next === rating
         ? await safe(deleteMutation.mutateAsync(vars))
         : await safe(upsertMutation.mutateAsync({ ...vars, rating: next }))
-    if (isError(res)) toast.error(getErrorMessage(res))
+    if (isError(res)) showErrorToast(res)
   }
 
   return (

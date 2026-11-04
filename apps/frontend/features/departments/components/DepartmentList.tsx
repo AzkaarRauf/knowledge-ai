@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { useQuery } from '@tanstack/react-query'
 import { Building2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
@@ -15,7 +16,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { departmentsQueryOptions } from '@/features/departments/api/queries'
 import { useDeleteDepartmentMutation } from '@/features/departments/hooks/useDeleteDepartmentMutation'
 import type { Department } from '@/features/departments/schemas'
-import { getErrorMessage } from '@/lib/errors'
 
 export function DepartmentList() {
   const { data: departments = [], isPending } = useQuery(departmentsQueryOptions())
@@ -27,7 +27,7 @@ export function DepartmentList() {
     const { id, name } = departmentToDelete
     setDepartmentToDelete(null)
     const res = await safe(deleteMutation.mutateAsync({ id }))
-    if (isError(res)) return toast.error(getErrorMessage(res))
+    if (isError(res)) return showErrorToast(res)
     toast.success(`"${name}" deleted`)
   }
 

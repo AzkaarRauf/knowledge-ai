@@ -13,6 +13,19 @@ import { ChatMessage } from '@/features/conversations/components/ChatMessage'
 import { MessageFeedback } from '@/features/conversations/components/MessageFeedback'
 import { clearPendingReply, getPendingReply } from '@/features/conversations/pending-prompt'
 import { publicDepartmentsQueryOptions } from '@/features/departments/api/queries'
+import { formatLocalTime } from '@/lib/error-toast'
+import { ApiRateLimitError } from '@/lib/errors'
+
+/** Re-renders every second while `until` is in the future. Returns the current time. */
+function useNow(until: number | null) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (until === null) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [until])
+  return now
+}
 
 export function ConversationView({ conversationId }: { conversationId: string }) {
   const queryClient = useQueryClient()
@@ -28,6 +41,12 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const isReplying = reply.fetchStatus === 'fetching'
   // once done, the saved messages have landed (the stream awaits their refetch), so hide the streamed copy
   const showPending = pending !== null && (isReplying || reply.isError)
+  // after a rate limit error the user can't send until cooldownUntil. No auto-retry.
+  const limitError = reply.isError && !isReplying && ApiRateLimitError.check(reply.error) ? reply.error : null
+  const cooldownUntil = getCooldownUntil(limitError, reply.errorUpdatedAt)
+  const now = useNow(cooldownUntil)
+  const isCoolingDown = cooldownUntil !== null && now < cooldownUntil
+  const cooldownNotice = isCoolingDown && limitError ? getCooldownNotice(limitError, cooldownUntil, now) : undefined
   const bottomRef = useRef<HTMLDivElement>(null)
 
   function handleSend(prompt: string) {
@@ -91,7 +110,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                   // backend saves nothing on failure, so sending the same prompt again is safe
                   <div className="flex items-center gap-3 text-sm text-destructive">
                     Something went wrong.
-                    <Button variant="outline" size="sm" onClick={() => void reply.refetch()}>
+                    <Button variant="outline" size="sm" disabled={isCoolingDown} onClick={() => void reply.refetch()}>
                       <RotateCcw data-icon="inline-start" />
                       Retry
                     </Button>
@@ -108,12 +127,28 @@ export function ConversationView({ conversationId }: { conversationId: string })
         )}
       </div>
       <div className="relative mx-auto w-full max-w-3xl px-4 pb-4">
-        <ChatComposer onSend={handleSend} disabled={isReplying || isPending} autoFocus />
+        <ChatComposer onSend={handleSend} disabled={isReplying || isPending || isCoolingDown} notice={cooldownNotice} autoFocus />
         <ConversationDepartment conversationId={conversationId} />
         <p className="mt-2 text-center text-xs text-muted-foreground">Answers come from your documents only.</p>
       </div>
     </div>
   )
+}
+
+/** Time (ms) when sending is allowed again, or null when the error is not a send limit. */
+function getCooldownUntil(error: ApiRateLimitError | null, errorAt: number) {
+  if (!error) return null
+  if (error.code === 'AI_DAILY_LIMIT' && error.resetAt) {
+    const resetAt = new Date(error.resetAt).getTime()
+    if (!Number.isNaN(resetAt)) return resetAt
+  }
+  if (error.code === 'RATE_LIMIT_USER' && error.retryAfterSec !== undefined) return errorAt + error.retryAfterSec * 1000
+  return null
+}
+
+function getCooldownNotice(error: ApiRateLimitError, until: number, now: number) {
+  if (error.code === 'AI_DAILY_LIMIT') return `Resets at ${formatLocalTime(new Date(until).toISOString()) ?? 'midnight'}`
+  return `Send available in ${Math.max(1, Math.ceil((until - now) / 1000))}s`
 }
 
 /** Pill naming the department this chat searches in. Absolute, so it sits on the footnote line without taking space. */

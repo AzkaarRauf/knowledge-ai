@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -12,7 +13,6 @@ import { setPendingReply } from '@/features/conversations/pending-prompt'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { publicDepartmentsQueryOptions } from '@/features/departments/api/queries'
-import { getErrorMessage } from '@/lib/errors'
 import { BrandMark } from '@/components/shell/Brand'
 
 const TITLE_MAX_LENGTH = 60
@@ -34,7 +34,7 @@ export function NewChat() {
     const title = prompt.length > TITLE_MAX_LENGTH ? `${prompt.slice(0, TITLE_MAX_LENGTH).trimEnd()}…` : prompt
     const res = await safe(createMutation.mutateAsync({ title, departmentId }))
     if (isError(res)) {
-      toast.error(getErrorMessage(res))
+      showErrorToast(res)
       return false
     }
     const pending = { prompt, sentAt: Date.now() }

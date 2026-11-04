@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { revalidateLogic } from '@tanstack/react-form'
 import { useQuery } from '@tanstack/react-query'
 import { UserRound } from 'lucide-react'
@@ -25,7 +26,7 @@ import {
 import { useUpdateUserMutation } from '@/features/users/hooks/useUpdateUserMutation'
 import { type EditUserFormInput, EditUserFormSchema, roleLabel, type User } from '@/features/users/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
-import { ApiValidationError, getErrorMessage } from '@/lib/errors'
+import { ApiValidationError } from '@/lib/errors'
 
 export function UserDetail({ userId }: { userId: string }) {
   const { data: user, isPending } = useQuery(userQueryOptions(userId))
@@ -79,7 +80,7 @@ function UserForm({ user }: { user: User }) {
       const res = await safe(updateMutation.mutateAsync({ id: user.id, ...parsed }))
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
       if (isEmailTakenError(res)) return setEmailTakenError(formApi, parsed.email)
-      if (isError(res)) return toast.error(getErrorMessage(res))
+      if (isError(res)) return showErrorToast(res)
       toast.success('User updated')
       form.reset(value) // also makes `value` the new defaultValues
       setIsEditing(false)

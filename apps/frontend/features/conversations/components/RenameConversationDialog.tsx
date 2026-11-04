@@ -1,7 +1,7 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { revalidateLogic } from '@tanstack/react-form'
-import { toast } from 'sonner'
 import { isError, safe } from 'shared'
 import {
   AlertDialog,
@@ -18,7 +18,7 @@ import {
   type RenameConversationFormInput,
 } from '@/features/conversations/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
-import { ApiValidationError, getErrorMessage } from '@/lib/errors'
+import { ApiValidationError } from '@/lib/errors'
 
 type RenameConversationDialogProps = {
   conversation: Conversation | null
@@ -55,7 +55,7 @@ function RenameConversationForm({ conversation, onDone }: { conversation: Conver
       const parsed = RenameConversationFormSchema.parse(value)
       const res = await safe(renameMutation.mutateAsync({ id: conversation.id, ...parsed }))
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
-      if (isError(res)) return toast.error(getErrorMessage(res))
+      if (isError(res)) return showErrorToast(res)
       onDone()
     },
   })

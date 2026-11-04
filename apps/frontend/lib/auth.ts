@@ -1,5 +1,6 @@
 import { env } from '@/lib/env'
-import axios from 'axios'
+import { handleErrorResponse } from '@/lib/errors'
+import axios, { isAxiosError } from 'axios'
 import { RefreshTokenResponse } from 'shared'
 import { z } from 'zod'
 
@@ -58,4 +59,14 @@ export function refreshAccessToken() {
       refreshPromise = null
     })
   return refreshPromise
+}
+
+/**
+ * Call when `refreshAccessToken` failed. Only a 401 (or an empty token) means the session is
+ * gone, so only then go to login and return. Any other failure (429, 503, network) is thrown
+ * as a typed error and the user stays on the page.
+ */
+export function handleRefreshFailure(error: unknown) {
+  if (isAxiosError(error) && error.response?.status !== 401) handleErrorResponse(error)
+  redirectToLogin()
 }

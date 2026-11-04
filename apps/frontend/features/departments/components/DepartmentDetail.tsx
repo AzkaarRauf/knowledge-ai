@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { revalidateLogic } from '@tanstack/react-form'
 import { useQuery } from '@tanstack/react-query'
 import { Building2 } from 'lucide-react'
@@ -20,7 +21,7 @@ import { useDeleteDepartmentMutation } from '@/features/departments/hooks/useDel
 import { useUpdateDepartmentMutation } from '@/features/departments/hooks/useUpdateDepartmentMutation'
 import { type Department, type DepartmentFormInput, DepartmentFormSchema } from '@/features/departments/schemas'
 import { useAppForm } from '@/hooks/useAppForm'
-import { ApiValidationError, getErrorMessage } from '@/lib/errors'
+import { ApiValidationError } from '@/lib/errors'
 
 export function DepartmentDetail({ departmentId }: { departmentId: string }) {
   const { data: department, isPending } = useQuery(departmentQueryOptions(departmentId))
@@ -69,7 +70,7 @@ function DepartmentForm({ department }: { department: Department }) {
       const res = await safe(updateMutation.mutateAsync({ id: department.id, ...parsed }))
       if (ApiValidationError.check(res)) return res.applyToForm(formApi)
       if (isNameTakenError(res)) return setNameTakenError(formApi, parsed.name)
-      if (isError(res)) return toast.error(getErrorMessage(res))
+      if (isError(res)) return showErrorToast(res)
       toast.success('Department updated')
       form.reset(value) // also makes `value` the new defaultValues
       setIsEditing(false)
@@ -91,7 +92,7 @@ function DepartmentForm({ department }: { department: Department }) {
   async function handleDeleteConfirm() {
     setConfirmingDelete(false)
     const res = await safe(deleteMutation.mutateAsync({ id: department.id }))
-    if (isError(res)) return toast.error(getErrorMessage(res))
+    if (isError(res)) return showErrorToast(res)
     toast.success(`"${department.name}" deleted`)
     router.replace('/departments')
   }

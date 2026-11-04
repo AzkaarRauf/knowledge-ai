@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { ConfirmationDialog } from '@/components/ConfirmationDialog'
 import { Badge, type badgeVariants } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,7 +14,6 @@ import { DocumentListToolbar } from '@/features/documents/components/DocumentLis
 import { useDeleteDocumentMutation } from '@/features/documents/hooks/useDeleteDocumentMutation'
 import { useDocumentListParams } from '@/features/documents/hooks/useDocumentListParams'
 import { type Document, type DocumentStatus, type ListDocumentsQuery } from '@/features/documents/schemas'
-import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { type VariantProps } from 'class-variance-authority'
@@ -57,7 +57,7 @@ export function DocumentList({ canManage }: { canManage: boolean }) {
     const { id, filename } = documentToDelete
     setDocumentToDelete(null)
     const res = await safe(deleteMutation.mutateAsync({ id }))
-    if (isError(res)) return toast.error(getErrorMessage(res))
+    if (isError(res)) return showErrorToast(res)
     toast.success(`"${filename}" deleted`)
   }
 

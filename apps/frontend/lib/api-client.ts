@@ -1,4 +1,4 @@
-import { REFRESH_TOKEN_PATH, redirectToLogin, refreshAccessToken } from '@/lib/auth'
+import { REFRESH_TOKEN_PATH, handleRefreshFailure, refreshAccessToken } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { handleErrorResponse } from '@/lib/errors'
 import axios, { isAxiosError, type InternalAxiosRequestConfig } from 'axios'
@@ -30,8 +30,9 @@ async function retryAfterRefresh(error: unknown) {
   config._retried = true
   try {
     await refreshAccessToken()
-  } catch {
-    redirectToLogin()
+  } catch (refreshError) {
+    // throws for 429/503 and other non-401 failures; on a 401 it redirects, then we map the original error
+    handleRefreshFailure(refreshError)
     return handleErrorResponse(error)
   }
   // The request interceptor re-applies the new token.

@@ -12,6 +12,26 @@ export class ApiError extends Error {
   }
 }
 
+export type RateLimitCode = 'RATE_LIMIT_USER' | 'AI_DAILY_LIMIT' | 'AI_BUSY' | 'RATE_LIMIT_UNAVAILABLE'
+
+/** 429 and 503 errors from the rate limiter. `code` tells which one. */
+export class ApiRateLimitError extends ApiError {
+  constructor(
+    message: string,
+    status: number,
+    public readonly code: RateLimitCode,
+    public readonly retryAfterSec?: number,
+    public readonly resetAt?: string,
+  ) {
+    super(message, status)
+    this.name = 'ApiRateLimitError'
+  }
+
+  static check(value: unknown): value is ApiRateLimitError {
+    return value instanceof ApiRateLimitError
+  }
+}
+
 export class ApiValidationError extends ApiError {
   constructor(
     message: string,
@@ -34,7 +54,12 @@ export class ApiValidationError extends ApiError {
   }
 }
 
-const ErrorBodySchema = z.object({
+const RateLimitCodeSchema = z.enum(['RATE_LIMIT_USER', 'AI_DAILY_LIMIT', 'AI_BUSY', 'RATE_LIMIT_UNAVAILABLE'])
+
+export const ErrorBodySchema = z.object({
+  code: RateLimitCodeSchema.optional().catch(undefined),
+  retryAfterSec: z.number().optional().catch(undefined),
+  resetAt: z.string().optional().catch(undefined),
   message: z.union([z.string(), z.array(z.string())]).catch(''),
   errors: z
     .array(
@@ -46,6 +71,33 @@ const ErrorBodySchema = z.object({
     .nullish(),
 })
 
+/** Biggest value (in seconds) of all Retry-After* headers. Undefined if none is valid. */
+export function maxRetryAfterSec(headers: { forEach: (cb: (value: string, key: string) => void) => void }) {
+  let max: number | undefined
+  headers.forEach((value, key) => {
+    if (!key.toLowerCase().startsWith('retry-after')) return
+    const sec = Number(value)
+    if (Number.isFinite(sec) && sec >= 0 && (max === undefined || sec > max)) max = sec
+  })
+  return max
+}
+
+type ErrorBody = z.infer<typeof ErrorBodySchema>
+
+/** Returns a rate limit error if the status and body say so, else undefined. */
+export function toRateLimitError(
+  status: number,
+  message: string,
+  body: ErrorBody | undefined,
+  headerRetryAfterSec: () => number | undefined,
+) {
+  if (status !== 429 && status !== 503) return undefined
+  const code = body?.code
+  if (!code) return undefined
+  const retryAfterSec = body.retryAfterSec ?? headerRetryAfterSec()
+  return new ApiRateLimitError(message, status, code, retryAfterSec, body.resetAt)
+}
+
 export function handleErrorResponse(error: unknown): never {
   if (!isAxiosError(error)) throw error
 
@@ -54,6 +106,17 @@ export function handleErrorResponse(error: unknown): never {
   const rawMessage = body.success ? body.data.message : ''
   const message =
     (Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage) || (status ? `Request failed (${status})` : 'Network error')
+
+  const rateLimit = toRateLimitError(status, message, body.success ? body.data : undefined, () => {
+    const headers = error.response?.headers
+    if (!headers) return undefined
+    return maxRetryAfterSec({
+      forEach: (cb) => {
+        for (const [key, value] of Object.entries(headers)) cb(String(value), key)
+      },
+    })
+  })
+  if (rateLimit) throw rateLimit
 
   // Nest StandardSchemaValidationPipe: { statusCode: 400, message, errors: [{ path, message }] }
   if (status === 400 && body.success && body.data.errors) {

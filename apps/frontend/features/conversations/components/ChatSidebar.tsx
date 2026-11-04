@@ -1,5 +1,6 @@
 'use client'
 
+import { showErrorToast } from '@/lib/error-toast'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { differenceInCalendarDays } from 'date-fns'
 import { Pencil, Search, SquarePen, Trash2, X } from 'lucide-react'
@@ -17,7 +18,6 @@ import { RenameConversationDialog } from '@/features/conversations/components/Re
 import { useDeleteConversationMutation } from '@/features/conversations/hooks/useDeleteConversationMutation'
 import { type Conversation } from '@/features/conversations/schemas'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
-import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -88,7 +88,7 @@ function ConversationList({ search }: { search: string }) {
     const { id, title } = conversationToDelete
     setConversationToDelete(null)
     const res = await safe(deleteMutation.mutateAsync({ id }))
-    if (isError(res)) return toast.error(getErrorMessage(res))
+    if (isError(res)) return showErrorToast(res)
     toast.success(`"${title}" deleted`)
     if (id === conversationId) router.push('/chat')
   }

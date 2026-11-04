@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { api } from '@/lib/api-client'
-import { redirectToLogin, refreshAccessToken } from '@/lib/auth'
+import { handleRefreshFailure, refreshAccessToken } from '@/lib/auth'
 import { env } from '@/lib/env'
-import { ApiError } from '@/lib/errors'
+import { ApiError, ErrorBodySchema, maxRetryAfterSec, toRateLimitError } from '@/lib/errors'
 import {
   ChatRequestSchema,
   type ChatRequest,
@@ -64,7 +64,6 @@ export async function deleteMessageFeedback(conversationId: string, messageId: s
 }
 
 const SseDataSchema = z.string().catch('')
-const ErrorBodySchema = z.object({ message: z.union([z.string(), z.array(z.string())]).catch('') }).catch({ message: '' })
 
 /**
  * Sends a prompt and yields the SSE reply piece by piece.
@@ -86,15 +85,22 @@ export async function* streamChat(args: { id: string; request: ChatRequest }) {
   if (res.status === 401) {
     try {
       await refreshAccessToken()
-    } catch {
-      redirectToLogin()
+    } catch (refreshError) {
+      // throws for 429/503 and other non-401 failures; on a 401 it redirects
+      handleRefreshFailure(refreshError)
       throw new ApiError('Session expired', 401)
     }
     res = await send()
   }
   if (!res.ok || !res.body) {
-    const { message } = ErrorBodySchema.parse(await res.json().catch(() => null))
-    throw new ApiError((Array.isArray(message) ? message.join(', ') : message) || `Request failed (${res.status})`, res.status)
+    const parsed = ErrorBodySchema.safeParse(await res.json().catch(() => null))
+    const body = parsed.success ? parsed.data : undefined
+    const rawMessage = body?.message ?? ''
+    const message = (Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage) || `Request failed (${res.status})`
+    // rate limit errors come as JSON before the stream starts
+    const rateLimit = toRateLimitError(res.status, message, body, () => maxRetryAfterSec(res.headers))
+    if (rateLimit) throw rateLimit
+    throw new ApiError(message, res.status)
   }
 
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
