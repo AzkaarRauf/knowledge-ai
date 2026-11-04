@@ -9,8 +9,9 @@ import { QueueNames } from './queue.constants.js'
     imports: [
         BullModule.registerQueue({
             name: QueueNames.documentProcessing,
-            // embedding api can fail for a moment, so retry with growing delay
-            defaultJobOptions: { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+            // no auto retries: a failed job goes straight to FAILED. to retry, delete the doc and upload again.
+            // drop finished jobs to keep redis small
+            defaultJobOptions: { attempts: 1, removeOnComplete: true, removeOnFail: { count: 1000 } },
         }),
         S3Module,
         EmbeddingModule,

@@ -42,7 +42,7 @@ Pending work vs the assignment, in suggested order.
 - [x] Redis setup
 - [x] Queue + worker for document processing (BullMQ)
 - [x] Document status field (`PENDING`/`PROCESSING`/`DONE`/`FAILED`)
-- [ ] Redis cache / locking
+- [x] Redis cache / locking
 
 ## 7. Reliability
 

@@ -7,14 +7,9 @@ import { DocumentProcessingConsumer } from './document-processing.consumer.js'
 import { DocumentProcessingJobs, JobOf } from './queue.constants.js'
 
 const documentId = 'b5f0b6c2-4d2b-4a0e-8f43-7c1d1f0a2e33'
-const makeJob = (attemptsMade = 0) =>
-    ({
-        name: 'process',
-        data: { documentId, mimetype: 'text/plain' },
-        attemptsMade,
-        opts: { attempts: 3 },
-    }) as JobOf<DocumentProcessingJobs>
-const job = makeJob()
+const job = { name: 'process', data: { documentId, mimetype: 'text/plain' } } as JobOf<DocumentProcessingJobs>
+// status writes outside the locked tx never overwrite DONE
+const setStatusCall = (status: string) => ({ where: { id: documentId, status: { not: 'DONE' } }, data: { status } })
 
 describe('DocumentProcessingConsumer', () => {
     let consumer: DocumentProcessingConsumer
@@ -54,37 +49,29 @@ describe('DocumentProcessingConsumer', () => {
         expect(chunks.map((c: { pageContent: string }) => c.pageContent)).toEqual(['hello world'])
         expect(tx.documentChunk.deleteMany).toHaveBeenCalledWith({ where: { documentId } })
         expect(tx.$executeRaw).toHaveBeenCalled()
-        expect(db.document.updateMany).toHaveBeenCalledWith({ where: { id: documentId }, data: { status: 'PROCESSING' } })
+        expect(db.document.updateMany).toHaveBeenCalledWith(setStatusCall('PROCESSING'))
         expect(tx.document.updateMany).toHaveBeenCalledWith({ where: { id: documentId }, data: { status: 'DONE' } })
         expect(cacheVersionService.inc).toHaveBeenCalledWith(['documents'])
+        expect(db.$transaction).toHaveBeenCalledWith(expect.any(Function), { maxWait: 10_000, timeout: 30_000 })
     })
 
-    it('marks failed without retry when the document has no text', async () => {
+    it('marks failed when the document has no text', async () => {
         db.document.findUnique.mockResolvedValue({ s3key: 'admin/empty.txt', filename: 'empty.txt' })
         s3Service.download.mockResolvedValue(Buffer.from(''))
 
         await consumer.process(job)
 
         expect(embeddingService.embedDocuments).not.toHaveBeenCalled()
-        expect(db.document.updateMany).toHaveBeenLastCalledWith({ where: { id: documentId }, data: { status: 'FAILED' } })
+        expect(db.document.updateMany).toHaveBeenLastCalledWith(setStatusCall('FAILED'))
     })
 
-    it('keeps status while retries are left', async () => {
+    it('marks failed on the first error, since there are no auto retries', async () => {
         db.document.findUnique.mockResolvedValue({ s3key: 'admin/notes.txt', filename: 'notes.txt' })
         s3Service.download.mockRejectedValue(new Error('s3 down'))
 
-        await expect(consumer.process(makeJob(0))).rejects.toThrow('s3 down')
+        await expect(consumer.process(job)).rejects.toThrow('s3 down')
 
-        expect(db.document.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'FAILED' } }))
-    })
-
-    it('marks failed on the last attempt', async () => {
-        db.document.findUnique.mockResolvedValue({ s3key: 'admin/notes.txt', filename: 'notes.txt' })
-        s3Service.download.mockRejectedValue(new Error('s3 down'))
-
-        await expect(consumer.process(makeJob(2))).rejects.toThrow('s3 down')
-
-        expect(db.document.updateMany).toHaveBeenLastCalledWith({ where: { id: documentId }, data: { status: 'FAILED' } })
+        expect(db.document.updateMany).toHaveBeenLastCalledWith(setStatusCall('FAILED'))
     })
 
     it('skips when the document was deleted before the job ran', async () => {

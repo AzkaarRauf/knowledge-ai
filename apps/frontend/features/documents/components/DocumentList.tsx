@@ -250,7 +250,7 @@ function DocumentStatusBadge({ status }: { status: DocumentStatus }) {
     return (
       <Tooltip>
         <TooltipTrigger render={<Badge variant={variant} tabIndex={0} />}>{label}</TooltipTrigger>
-        <TooltipContent>Could not be processed. Upload the same file again to retry.</TooltipContent>
+        <TooltipContent>Could not be processed. Delete and upload again.</TooltipContent>
       </Tooltip>
     )
   }

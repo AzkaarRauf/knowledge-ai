@@ -83,6 +83,8 @@ model Document {
   department     Department?     @relation(fields: [departmentId], references: [id])
   departmentId   String?         @db.Uuid
 
+  // the db index needs NULLS NOT DISTINCT (Postgres 15+) so a null department is unique too.
+  // Prisma can't express that, so it must be done in a raw sql migration
   @@unique([fileHash, departmentId])
   @@index([userId])
   @@index([conversationId])
@@ -92,7 +94,8 @@ model Document {
 
 model DocumentChunk {
   id            String                     @id @default(uuid()) @db.Uuid
-  document      Document                   @relation(fields: [documentId], references: [id])
+  // chunks go when the document is deleted
+  document      Document                   @relation(fields: [documentId], references: [id], onDelete: Cascade)
   content       String
   metadata      Json
   embedding     Unsupported("vector(768)")

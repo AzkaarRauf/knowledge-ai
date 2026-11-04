@@ -4,7 +4,6 @@ import { createHash } from 'node:crypto'
 import { isError, type ListDocumentsQuery, type Paginated, safe } from 'shared'
 import { buildPaginationMeta, toPrismaPagination } from 'src/common/utils/pagination.js'
 import { Prisma } from 'src/generated/prisma/client.js'
-import { DocumentStatus } from 'src/generated/prisma/enums.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { type DocumentProcessingQueue, QueueNames } from 'src/queue/queue.constants.js'
 import { S3Service } from 'src/s3/s3.service.js'
@@ -29,14 +28,7 @@ export class DocumentsService {
     }> {
         const { file, userId, departmentId } = args
         const fileHash = createHash('sha256').update(file.buffer).digest('hex')
-        const existingDocument = await this.db.document.findFirst({
-            where: { fileHash, userId, departmentId },
-            include: documentInclude,
-        })
-        if (existingDocument?.status === DocumentStatus.FAILED) {
-            // same file again after a failed run means try again
-            return { document: await this.reprocess(existingDocument, file.mimetype), isNew: false }
-        }
+        const existingDocument = await this.findExisting({ fileHash, departmentId, userId })
         if (existingDocument) {
             return { document: existingDocument, isNew: false }
         }
@@ -65,6 +57,13 @@ export class DocumentsService {
         )
         if (isError(document)) {
             void this.s3Service.delete(key).catch((e) => this.logger.error(e))
+            // same file was saved by a parallel upload after our check. return that one instead
+            if (document instanceof Prisma.PrismaClientKnownRequestError && document.code === 'P2002') {
+                const raced = await this.findExisting({ fileHash, departmentId, userId })
+                if (raced) {
+                    return { document: raced, isNew: false }
+                }
+            }
             throw document
         }
 
@@ -85,27 +84,13 @@ export class DocumentsService {
         return { document, isNew: true }
     }
 
-    private async reprocess(document: Document, mimetype: string): Promise<Document> {
-        // set PENDING before enqueue, else it could overwrite the worker's PROCESSING
-        const updated = await this.db.document.update({
-            where: { id: document.id },
-            data: { status: DocumentStatus.PENDING },
+    // same key as the db unique index (fileHash, departmentId), limited to docs the user can see
+    private findExisting(args: { fileHash: string; departmentId: string | null; userId: string }) {
+        const { fileHash, departmentId, userId } = args
+        return this.db.document.findFirst({
+            where: { fileHash, departmentId, ...this.visibleTo(userId) },
             include: documentInclude,
         })
-        const job = await safe(
-            (async () => {
-                // the failed job still holds jobId = documentId, so add() would be a no-op without this
-                await this.documentProcessingQueue.remove(document.id)
-                return this.documentProcessingQueue.add('process', { documentId: document.id, mimetype }, { jobId: document.id })
-            })(),
-        )
-        if (isError(job)) {
-            await this.db.document
-                .update({ where: { id: document.id }, data: { status: DocumentStatus.FAILED } })
-                .catch((e) => this.logger.error(e))
-            throw job
-        }
-        return updated
     }
 
     // txt has no magic number, so the validator trusts the client mimetype.
@@ -163,11 +148,7 @@ export class DocumentsService {
     }
 
     async remove(id: string, userId: string) {
-        // delete chunks then document in one tx; throws P2025 (404) if document is missing or not owned by user
-        const document = await this.db.$transaction(async (tx) => {
-            await tx.documentChunk.deleteMany({ where: { documentId: id, document: { userId } } })
-            return tx.document.delete({ where: { id, userId } })
-        })
+        const document = await this.db.document.delete({ where: { id, userId } })
 
         // db is source of truth, so a failed s3 delete only leaves an orphan file
         await this.s3Service.delete(document.s3key).catch((e) => this.logger.error(e))

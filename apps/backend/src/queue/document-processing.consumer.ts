@@ -15,6 +15,9 @@ import { CacheVersionService } from 'src/redis/cache-version.service.js'
 import { S3Service } from 'src/s3/s3.service.js'
 import { DocumentProcessingJobs, JobOf, QueueNames } from './queue.constants.js'
 
+// waiting for the row lock counts toward the timeout, and a big doc inserts many rows, so the 5s default is too short
+const CHUNK_WRITE_TX_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
+
 @Processor(QueueNames.documentProcessing)
 export class DocumentProcessingConsumer extends WorkerHost {
     private logger = new Logger(DocumentProcessingConsumer.name)
@@ -34,18 +37,20 @@ export class DocumentProcessingConsumer extends WorkerHost {
                 try {
                     return await this.processDocument(job.data)
                 } catch (e) {
-                    // attemptsMade counts past tries only, so +1 is this one. FAILED only once no retry is left
-                    if (job.attemptsMade + 1 >= (job.opts.attempts ?? 1)) {
-                        await this.setStatus(job.data.documentId, DocumentStatus.FAILED).catch((err) => this.logger.error(err))
-                    }
+                    // no auto retries, so any error means FAILED
+                    await this.setStatus(job.data.documentId, DocumentStatus.FAILED).catch((err) => this.logger.error(err))
                     throw e
                 }
         }
     }
 
-    // updateMany so a doc deleted mid-job does not throw. bump cache so lists show the new status
+    // updateMany so a doc deleted mid-job does not throw. bump cache so lists show the new status.
+    // never overwrite DONE: if the same job runs twice, the late run must not undo a finished one
     private async setStatus(documentId: string, status: DocumentStatus) {
-        await this.db.document.updateMany({ where: { id: documentId }, data: { status } })
+        await this.db.document.updateMany({
+            where: { id: documentId, status: { not: DocumentStatus.DONE } },
+            data: { status },
+        })
         await this.cacheVersionService.inc([CACHE_RESOURCE.documents])
     }
 
@@ -84,7 +89,6 @@ export class DocumentProcessingConsumer extends WorkerHost {
         const textSplitter = new RecursiveCharacterTextSplitter({ chunkOverlap: 200, chunkSize: 1000 })
         const split = await textSplitter.splitDocuments(docs)
         if (split.length === 0) {
-            // retry would give the same result, so fail now
             this.logger.warn(`Document ${documentId} has no text, marking failed`)
             await this.setStatus(documentId, DocumentStatus.FAILED)
             return
@@ -93,8 +97,11 @@ export class DocumentProcessingConsumer extends WorkerHost {
         // embedding
         const embeds = await this.embeddingService.embedDocuments(split)
 
-        // delete old chunks first so a retry does not duplicate them. status flips to DONE with the chunks
+        // delete old chunks first so a rerun does not duplicate them. status flips to DONE with the chunks
         await this.db.$transaction(async (tx) => {
+            // lock the document row. if the same job runs twice after a stall, the second one waits here
+            // and then deletes the first one's chunks, so no duplicates
+            await tx.$executeRaw`SELECT 1 FROM "Document" WHERE id = ${documentId}::uuid FOR UPDATE`
             await tx.documentChunk.deleteMany({ where: { documentId } })
             const rows = split.map(
                 (item, i) =>
@@ -111,7 +118,7 @@ export class DocumentProcessingConsumer extends WorkerHost {
                   INSERT INTO "DocumentChunk" ("id", "content", "contentSearch", "embedding", "documentId", "metadata", "updatedAt")
                   VALUES ${join(rows)}`
             await tx.document.updateMany({ where: { id: documentId }, data: { status: DocumentStatus.DONE } })
-        })
+        }, CHUNK_WRITE_TX_OPTIONS)
         await this.cacheVersionService.inc([CACHE_RESOURCE.documents])
     }
 }

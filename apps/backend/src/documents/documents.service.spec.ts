@@ -1,5 +1,6 @@
 import { getQueueToken } from '@nestjs/bullmq'
 import { Test, TestingModule } from '@nestjs/testing'
+import { Prisma } from 'src/generated/prisma/client.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { QueueNames } from 'src/queue/queue.constants.js'
 import { S3Service } from 'src/s3/s3.service.js'
@@ -13,9 +14,16 @@ const txtFile = (text: string) =>
 
 describe('DocumentsService', () => {
     let service: DocumentsService
-    const db = { document: { findFirst: vi.fn(), create: vi.fn(), delete: vi.fn(), update: vi.fn() } }
+    const db = {
+        document: {
+            findFirst: vi.fn(),
+            create: vi.fn(),
+            delete: vi.fn(),
+            update: vi.fn(),
+        },
+    }
     const s3Service = { generateKey: vi.fn(), upload: vi.fn(), delete: vi.fn() }
-    const queue = { add: vi.fn(), remove: vi.fn() }
+    const queue = { add: vi.fn() }
 
     beforeEach(async () => {
         vi.resetAllMocks()
@@ -46,34 +54,25 @@ describe('DocumentsService', () => {
             expect(queue.add).not.toHaveBeenCalled()
         })
 
-        it('requeues a failed document when the same file is uploaded again', async () => {
-            const pending = { ...document, status: 'PENDING' }
-            db.document.findFirst.mockResolvedValue({ ...document, status: 'FAILED' })
-            db.document.update.mockResolvedValue(pending)
+        it('returns a failed document as is when the same file is uploaded again', async () => {
+            const failed = { ...document, status: 'FAILED' }
+            db.document.findFirst.mockResolvedValue(failed)
 
             await expect(service.upload({ file: txtFile('hello'), userId, departmentId: null })).resolves.toEqual({
-                document: pending,
+                document: failed,
                 isNew: false,
             })
-            expect(db.document.update).toHaveBeenCalledWith(
-                expect.objectContaining({ where: { id: document.id }, data: { status: 'PENDING' } }),
-            )
-            expect(queue.remove).toHaveBeenCalledWith(document.id)
-            expect(queue.add).toHaveBeenCalledWith(
-                'process',
-                { documentId: document.id, mimetype: 'text/plain' },
-                { jobId: document.id },
-            )
-            expect(s3Service.upload).not.toHaveBeenCalled()
+            expect(db.document.update).not.toHaveBeenCalled()
+            expect(queue.add).not.toHaveBeenCalled()
         })
 
-        it('sets a requeued document back to failed when enqueue fails', async () => {
-            db.document.findFirst.mockResolvedValue({ ...document, status: 'FAILED' })
-            db.document.update.mockResolvedValue({ ...document, status: 'PENDING' })
-            queue.add.mockRejectedValue(new Error('redis down'))
+        it('looks up the existing document by the unique key, not the uploader', async () => {
+            db.document.findFirst.mockResolvedValue(document)
 
-            await expect(service.upload({ file: txtFile('hello'), userId, departmentId: null })).rejects.toThrow('redis down')
-            expect(db.document.update).toHaveBeenLastCalledWith({ where: { id: document.id }, data: { status: 'FAILED' } })
+            await service.upload({ file: txtFile('hello'), userId, departmentId: null })
+            const { where } = db.document.findFirst.mock.calls[0][0]
+            expect(where).toEqual(expect.objectContaining({ fileHash: expect.any(String), departmentId: null }))
+            expect(where).not.toHaveProperty('userId')
         })
 
         it('rejects binary content sent as text/plain', async () => {
@@ -112,6 +111,20 @@ describe('DocumentsService', () => {
             expect(queue.add).not.toHaveBeenCalled()
         })
 
+        it('returns the document saved by a parallel upload when create hits the unique index', async () => {
+            db.document.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(document)
+            db.document.create.mockRejectedValue(
+                new Prisma.PrismaClientKnownRequestError('unique', { code: 'P2002', clientVersion: 'test' }),
+            )
+
+            await expect(service.upload({ file: txtFile('hello world'), userId, departmentId: null })).resolves.toEqual({
+                document,
+                isNew: false,
+            })
+            expect(s3Service.delete).toHaveBeenCalledWith('admin/notes.txt')
+            expect(queue.add).not.toHaveBeenCalled()
+        })
+
         it('deletes the document and s3 object when queueing fails', async () => {
             db.document.findFirst.mockResolvedValue(null)
             db.document.create.mockResolvedValue(document)
@@ -122,6 +135,16 @@ describe('DocumentsService', () => {
                 'redis down',
             )
             expect(db.document.delete).toHaveBeenCalledWith({ where: { id: document.id } })
+            expect(s3Service.delete).toHaveBeenCalledWith('admin/notes.txt')
+        })
+    })
+
+    describe('remove', () => {
+        it('deletes only the document row; chunks go by cascade', async () => {
+            db.document.delete.mockResolvedValue({ ...document, s3key: 'admin/notes.txt' })
+
+            await service.remove(document.id, userId)
+            expect(db.document.delete).toHaveBeenCalledWith({ where: { id: document.id, userId } })
             expect(s3Service.delete).toHaveBeenCalledWith('admin/notes.txt')
         })
     })
