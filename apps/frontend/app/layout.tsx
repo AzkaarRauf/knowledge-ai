@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist_Mono, Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
+import { env } from '@/lib/env'
 
 const inter = Inter({
   variable: '--font-sans',
@@ -14,6 +15,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: env.NEXT_PUBLIC_SITE_URL ? new URL(env.NEXT_PUBLIC_SITE_URL) : undefined,
+  robots: { index: false, follow: false },
   title: { default: 'Knowledge AI', template: '%s · Knowledge AI' },
   description: "Ask questions and get cited answers from your organization's documents.",
 }

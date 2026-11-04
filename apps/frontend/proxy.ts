@@ -6,7 +6,19 @@ const LOGIN_ROUTE = '/auth/login'
 const AUTH_PREFIX = '/auth/'
 const HOME_ROUTE = '/'
 
+// Keep the default *.vercel.app domain out of search results (duplicate of the custom domain).
+function withRobotsHeader(request: NextRequest, response: NextResponse) {
+  if (request.nextUrl.hostname.endsWith('.vercel.app')) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  }
+  return response
+}
+
 export function proxy(request: NextRequest) {
+  return withRobotsHeader(request, handle(request))
+}
+
+function handle(request: NextRequest) {
   const hasSession = request.cookies.has(REFRESH_TOKEN_COOKIE_NAME)
   const isAuthPage = request.nextUrl.pathname.startsWith(AUTH_PREFIX)
 
