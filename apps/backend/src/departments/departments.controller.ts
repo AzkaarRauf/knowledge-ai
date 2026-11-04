@@ -1,4 +1,6 @@
 import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
+import { Throttle } from '@nestjs/throttler'
+import { PUBLIC_THROTTLE } from 'src/throttle/throttle.constants.js'
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ZodResponse } from 'nestjs-zod'
 import { uuidSchema } from 'src/common/schemas/uuid.schema.js'
@@ -33,6 +35,7 @@ export class DepartmentsController {
     @SkipAuth()
     // Declared before `:id` so `public` is not matched as an id.
     @Get('public')
+    @Throttle(PUBLIC_THROTTLE)
     @ZodResponse({ type: [PublicDepartmentResponseDto], status: 200 })
     findAllPublic() {
         return this.departmentsService.findAllPublic()

@@ -1,4 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { DelayedError } from 'bullmq'
+import { AI_QUOTA } from 'src/ai-quota/ai-quota.constants.js'
+import { AiDailyLimitException } from 'src/common/exceptions/rate-limit.exceptions.js'
 import { EmbeddingService } from 'src/embedding/embedding.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { CacheVersionService } from 'src/redis/cache-version.service.js'
@@ -80,6 +83,32 @@ describe('DocumentProcessingConsumer', () => {
         await consumer.process(job)
 
         expect(s3Service.download).not.toHaveBeenCalled()
+        expect(db.$transaction).not.toHaveBeenCalled()
+    })
+
+    it('marks failed when the doc has more chunks than one day of ingestion quota', async () => {
+        db.document.findUnique.mockResolvedValue({ s3key: 'admin/big.txt', filename: 'big.txt' })
+        // ~800 new chars per chunk, so this gives well over 600 chunks
+        s3Service.download.mockResolvedValue(Buffer.from('word '.repeat(AI_QUOTA.ingestion.perDay * 200)))
+
+        await consumer.process(job)
+
+        expect(embeddingService.embedDocuments).not.toHaveBeenCalled()
+        expect(db.document.updateMany).toHaveBeenLastCalledWith(setStatusCall('FAILED'))
+    })
+
+    it('delays the job until reset, keeping the doc pending, when the daily quota is used up', async () => {
+        const resetAt = new Date('2026-11-05T08:00:00.000Z')
+        const moveToDelayed = vi.fn()
+        const delayedJob = { ...job, moveToDelayed } as unknown as typeof job
+        db.document.findUnique.mockResolvedValue({ s3key: 'admin/notes.txt', filename: 'notes.txt' })
+        s3Service.download.mockResolvedValue(Buffer.from('hello world'))
+        embeddingService.embedDocuments.mockRejectedValue(new AiDailyLimitException(resetAt))
+
+        await expect(consumer.process(delayedJob, 'lock-token')).rejects.toBeInstanceOf(DelayedError)
+
+        expect(moveToDelayed).toHaveBeenCalledWith(resetAt.getTime(), 'lock-token')
+        expect(db.document.updateMany).toHaveBeenLastCalledWith(setStatusCall('PENDING'))
         expect(db.$transaction).not.toHaveBeenCalled()
     })
 })

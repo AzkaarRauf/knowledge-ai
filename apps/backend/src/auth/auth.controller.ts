@@ -9,6 +9,8 @@ import { JwtPayload } from 'src/decorators/jwt-payload/jwt-payload.decorator.js'
 import { GoogleOAuthGuard } from './google/google-oauth.guard.js'
 import { GoogleOAuthErrorFilter } from './google/google-oauth.filter.js'
 import { GoogleUser } from './google/google.strategy.js'
+import { Throttle } from '@nestjs/throttler'
+import { STRICT_THROTTLE } from 'src/throttle/throttle.constants.js'
 
 @SkipAuth()
 @Controller('auth')
@@ -23,6 +25,7 @@ export class AuthController {
     }
 
     @Get('refresh-token')
+    @Throttle(STRICT_THROTTLE)
     @ZodResponse({ type: RefreshTokenResponseDto, status: 200 })
     refreshToken(@Cookies() cookies: any, @Res({ passthrough: true }) res: Response) {
         const refreshToken = cookies.refreshToken
@@ -37,10 +40,12 @@ export class AuthController {
     }
 
     @Get('google')
+    @Throttle(STRICT_THROTTLE)
     @UseGuards(GoogleOAuthGuard)
     googleLogin() {} // guard redirects to google
 
     @Get('google/callback')
+    @Throttle(STRICT_THROTTLE)
     @UseGuards(GoogleOAuthGuard)
     @UseFilters(GoogleOAuthErrorFilter)
     async googleCallback(@Req() req: Request, @Res() res: Response) {

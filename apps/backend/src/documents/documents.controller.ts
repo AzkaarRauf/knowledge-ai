@@ -1,4 +1,6 @@
 import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
+import { Throttle } from '@nestjs/throttler'
+import { STRICT_THROTTLE } from 'src/throttle/throttle.constants.js'
 import {
     Body,
     Controller,
@@ -43,6 +45,7 @@ export class DocumentsController {
     constructor(private readonly documentsService: DocumentsService) {}
 
     @Post('upload')
+    @Throttle(STRICT_THROTTLE)
     @UseRoles({ roles: [Role.ADMIN] })
     @UseInterceptors(FileInterceptor('file'))
     @ApiConsumes('multipart/form-data')

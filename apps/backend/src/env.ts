@@ -30,6 +30,8 @@ const envSchema = z.object({
         .pipe(z.array(z.string()).nonempty('At least one domain is required')),
     REDIS_CONNECTION_STRING: z.string().nonempty(),
     REDIS_CACHE_TTL_MS: z.coerce.number().optional(),
+    // turn off the http throttler, e.g. for e2e tests. the gemini quota guard always stays on
+    THROTTLE_ENABLED: z.stringbool().default(true),
 })
 
 export const env = envSchema.parse(process.env)

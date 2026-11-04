@@ -1,5 +1,6 @@
 import { BaseMessage } from '@langchain/core/messages'
 import { Test, TestingModule } from '@nestjs/testing'
+import { AiQuotaService } from 'src/ai-quota/ai-quota.service.js'
 import { LLMService } from './llm.service.js'
 
 // messages the fake model got on its last call
@@ -28,7 +29,7 @@ describe('LLMService', () => {
         received.messages = []
 
         const module: TestingModule = await Test.createTestingModule({
-            providers: [LLMService],
+            providers: [LLMService, { provide: AiQuotaService, useValue: { cooldown: vi.fn() } }],
         }).compile()
 
         service = module.get<LLMService>(LLMService)
@@ -46,6 +47,13 @@ describe('LLMService', () => {
                 ['ai', 'hello'],
                 ['system', 'note'],
             ])
+        })
+    })
+
+    describe('chatCallCount', () => {
+        it('is 1 with no history (no rewrite call), else 2', () => {
+            expect(service.chatCallCount([])).toBe(1)
+            expect(service.chatCallCount(service.toHistory([{ role: 'user', content: 'hi' }]))).toBe(2)
         })
     })
 

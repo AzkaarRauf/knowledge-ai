@@ -1,6 +1,8 @@
 import { Logger } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { type Response } from 'express'
+import { AiQuotaService } from 'src/ai-quota/ai-quota.service.js'
+import { AiBusyException } from 'src/common/exceptions/rate-limit.exceptions.js'
 import { LLMService } from 'src/llm/llm.service.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
 import { RAGService } from 'src/rag/rag.service.js'
@@ -26,7 +28,8 @@ describe('ConversationsService', () => {
         $transaction: vi.fn(),
     }
     const ragService = { retrieveDocumentChunks: vi.fn() }
-    const llmService = { toHistory: vi.fn(), rewriteQuery: vi.fn(), stream: vi.fn() }
+    const llmService = { toHistory: vi.fn(), rewriteQuery: vi.fn(), stream: vi.fn(), chatCallCount: vi.fn() }
+    const aiQuotaService = { reserveChat: vi.fn() }
     const cacheVersionService = { get: vi.fn(), inc: vi.fn() }
     const res = { setHeaders: vi.fn(), flushHeaders: vi.fn(), write: vi.fn(), end: vi.fn() }
 
@@ -44,6 +47,7 @@ describe('ConversationsService', () => {
                 { provide: RAGService, useValue: ragService },
                 { provide: LLMService, useValue: llmService },
                 { provide: CacheVersionService, useValue: cacheVersionService },
+                { provide: AiQuotaService, useValue: aiQuotaService },
             ],
         }).compile()
 
@@ -82,6 +86,29 @@ describe('ConversationsService', () => {
             expect(ragService.retrieveDocumentChunks).not.toHaveBeenCalled()
             expect(llmService.stream).not.toHaveBeenCalled()
             expect(res.write).not.toHaveBeenCalled()
+        })
+
+        it('reserves gemini quota for the whole chat before any ai call', async () => {
+            llmService.chatCallCount.mockReturnValue(2)
+            llmService.stream.mockResolvedValue(fakeStream([]))
+
+            await chat()
+
+            expect(llmService.chatCallCount).toHaveBeenCalledWith(history)
+            expect(aiQuotaService.reserveChat).toHaveBeenCalledWith({ llmCalls: 2 })
+            expect(aiQuotaService.reserveChat.mock.invocationCallOrder[0]).toBeLessThan(
+                llmService.rewriteQuery.mock.invocationCallOrder[0],
+            )
+        })
+
+        it('rejects with no ai call and no sse header when quota is not available', async () => {
+            aiQuotaService.reserveChat.mockRejectedValue(new AiBusyException())
+
+            await expect(chat()).rejects.toBeInstanceOf(AiBusyException)
+            expect(llmService.rewriteQuery).not.toHaveBeenCalled()
+            expect(ragService.retrieveDocumentChunks).not.toHaveBeenCalled()
+            expect(llmService.stream).not.toHaveBeenCalled()
+            expect(res.setHeaders).not.toHaveBeenCalled()
         })
 
         it('retrieves chunks with the rewritten prompt and conversation id', async () => {

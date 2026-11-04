@@ -1,4 +1,6 @@
 import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
+import { Throttle } from '@nestjs/throttler'
+import { STRICT_THROTTLE } from 'src/throttle/throttle.constants.js'
 import {
     Body,
     Controller,
@@ -111,6 +113,7 @@ export class ConversationsController {
     }
 
     @Post(':id/chat')
+    @Throttle(STRICT_THROTTLE)
     @HttpCode(HttpStatus.OK)
     chat(
         @Param('id', ParseUUIDPipe) id: string,

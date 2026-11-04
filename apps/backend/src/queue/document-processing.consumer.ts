@@ -5,7 +5,10 @@ import { DocumentLoader } from '@langchain/core/document_loaders/base'
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Logger } from '@nestjs/common'
+import { DelayedError } from 'bullmq'
 import { randomUUID } from 'node:crypto'
+import { AI_QUOTA } from 'src/ai-quota/ai-quota.constants.js'
+import { AiDailyLimitException, RateLimitUnavailableException } from 'src/common/exceptions/rate-limit.exceptions.js'
 import { EmbeddingService } from 'src/embedding/embedding.service.js'
 import { DocumentStatus } from 'src/generated/prisma/enums.js'
 import { join, sql } from 'src/generated/prisma/internal/prismaNamespace.js'
@@ -14,6 +17,9 @@ import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
 import { CacheVersionService } from 'src/redis/cache-version.service.js'
 import { S3Service } from 'src/s3/s3.service.js'
 import { DocumentProcessingJobs, JobOf, QueueNames } from './queue.constants.js'
+
+// when redis is down, try the job again after this long
+const REDIS_DOWN_RETRY_MS = 60_000
 
 // waiting for the row lock counts toward the timeout, and a big doc inserts many rows, so the 5s default is too short
 const CHUNK_WRITE_TX_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
@@ -31,12 +37,14 @@ export class DocumentProcessingConsumer extends WorkerHost {
         super()
     }
 
-    async process(job: JobOf<DocumentProcessingJobs>) {
+    async process(job: JobOf<DocumentProcessingJobs>, token?: string) {
         switch (job.name) {
             case 'process':
                 try {
-                    return await this.processDocument(job.data)
+                    return await this.processDocument(job, token)
                 } catch (e) {
+                    // job was moved to delayed (quota), it runs again later
+                    if (e instanceof DelayedError) throw e
                     // no auto retries, so any error means FAILED
                     await this.setStatus(job.data.documentId, DocumentStatus.FAILED).catch((err) => this.logger.error(err))
                     throw e
@@ -54,7 +62,8 @@ export class DocumentProcessingConsumer extends WorkerHost {
         await this.cacheVersionService.inc([CACHE_RESOURCE.documents])
     }
 
-    private async processDocument({ documentId, mimetype }: DocumentProcessingJobs['process']) {
+    private async processDocument(job: JobOf<DocumentProcessingJobs>, token?: string) {
+        const { documentId, mimetype } = job.data
         // doc may be deleted before the job runs; nothing to do then
         const document = await this.db.document.findUnique({
             where: { id: documentId },
@@ -94,8 +103,33 @@ export class DocumentProcessingConsumer extends WorkerHost {
             return
         }
 
+        // a doc must fit one day of ingestion quota, else it can never finish
+        if (split.length > AI_QUOTA.ingestion.perDay) {
+            this.logger.warn(
+                `Document ${documentId} has ${split.length} chunks, more than the daily AI limit of ${AI_QUOTA.ingestion.perDay}, marking failed`,
+            )
+            await this.setStatus(documentId, DocumentStatus.FAILED)
+            return
+        }
+
         // embedding
-        const embeds = await this.embeddingService.embedDocuments(split)
+        let embeds: number[][]
+        try {
+            embeds = await this.embeddingService.embedDocuments(split)
+        } catch (e) {
+            // quota used up today, or redis down: run the job again later instead of failing it
+            const runAt =
+                e instanceof AiDailyLimitException
+                    ? e.resetAt.getTime()
+                    : e instanceof RateLimitUnavailableException
+                      ? Date.now() + REDIS_DOWN_RETRY_MS
+                      : null
+            if (runAt === null) throw e
+            this.logger.warn(`Document ${documentId} delayed until ${new Date(runAt).toISOString()}: ${(e as Error).message}`)
+            await this.setStatus(documentId, DocumentStatus.PENDING)
+            await job.moveToDelayed(runAt, token)
+            throw new DelayedError()
+        }
 
         // delete old chunks first so a rerun does not duplicate them. status flips to DONE with the chunks
         await this.db.$transaction(async (tx) => {

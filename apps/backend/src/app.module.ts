@@ -28,6 +28,11 @@ import { REDIS_CLIENT, RedisClient } from './redis/redis.constants.js'
 import { RedisModule } from './redis/redis.module.js'
 import { S3Module } from './s3/s3.module.js'
 import { UsersModule } from './users/users.module.js'
+import { ThrottlerModule } from '@nestjs/throttler'
+import { type Response } from 'express'
+import { AppThrottlerGuard } from './throttle/app-throttler.guard.js'
+import { RedisThrottlerStorage } from './throttle/redis-throttler.storage.js'
+import { THROTTLERS } from './throttle/throttle.constants.js'
 
 @Catch(HttpException)
 class HttpExceptionFilter extends BaseExceptionFilter {
@@ -40,6 +45,13 @@ class HttpExceptionFilter extends BaseExceptionFilter {
             if (zodError instanceof ZodError) {
                 this.logger.error(`ZodSerializationException: ${zodError.message}`)
             }
+        }
+
+        // rate limit errors carry retryAfterSec. also send it as the standard header
+        const body = exception.getResponse()
+        const res = host.switchToHttp().getResponse<Response>()
+        if (typeof body === 'object' && 'retryAfterSec' in body && typeof body.retryAfterSec === 'number' && !res.headersSent) {
+            res.setHeader('Retry-After', body.retryAfterSec)
         }
 
         super.catch(exception, host)
@@ -74,6 +86,13 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         BullModule.forRoot({
             connection: { url: env.REDIS_CONNECTION_STRING },
         }),
+        ThrottlerModule.forRootAsync({
+            inject: [REDIS_CLIENT],
+            useFactory: (client: RedisClient) => ({
+                throttlers: [...THROTTLERS],
+                storage: new RedisThrottlerStorage(client),
+            }),
+        }),
     ],
     controllers: [AppController],
     providers: [
@@ -107,6 +126,11 @@ class HttpExceptionFilter extends BaseExceptionFilter {
         {
             provide: APP_GUARD,
             useClass: RoleGuard,
+        },
+        {
+            // after AuthGuard, so it can count per user id
+            provide: APP_GUARD,
+            useClass: AppThrottlerGuard,
         },
     ],
 })

@@ -19,6 +19,7 @@ import { FeedbackResponseDto } from './dto/feedback-response.dto.js'
 import { UpsertFeedbackRequestDto } from './dto/upsert-feedback-request.dto.js'
 import { CacheVersionService } from 'src/redis/cache-version.service.js'
 import { CACHE_RESOURCE } from 'src/redis/cache-resource.constants.js'
+import { AiQuotaService } from 'src/ai-quota/ai-quota.service.js'
 
 @Injectable()
 export class ConversationsService {
@@ -29,6 +30,7 @@ export class ConversationsService {
         private ragService: RAGService,
         private llmService: LLMService,
         private cacheVersionService: CacheVersionService,
+        private aiQuotaService: AiQuotaService,
     ) {}
 
     async chat(args: { id: string; userId: string; chatDto: ChatRequestDto; res: Response }) {
@@ -51,6 +53,10 @@ export class ConversationsService {
             },
         })
         const history = this.llmService.toHistory(messages)
+
+        // reserve gemini quota for the whole chat (llm calls + 1 query embed), so it never stops halfway.
+        // throws 429/503 as json, before any sse header is sent
+        await this.aiQuotaService.reserveChat({ llmCalls: this.llmService.chatCallCount(history) })
 
         const rewrittenPrompt = await this.llmService.rewriteQuery({ history, prompt })
         const chunks = await this.ragService.retrieveDocumentChunks({ prompt: rewrittenPrompt, conversationId: id })
