@@ -10,8 +10,9 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter.
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
-    // the next.js proxy runs on the same host. trust its X-Forwarded-For, so req.ip is the real client ip (rate limiting)
-    app.set('trust proxy', 'loopback')
+    // trust the proxy X-Forwarded-For, so req.ip is the real client ip (rate limiting)
+    // local: next.js proxy on same host, so 'loopback'. Render behind Vercel: set TRUST_PROXY=2 (Render proxy + Vercel)
+    app.set('trust proxy', env.TRUST_PROXY)
 
     app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' })
     app.setGlobalPrefix('api', {

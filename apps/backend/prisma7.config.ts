@@ -2,7 +2,12 @@
 import { loadEnvFile } from 'node:process'
 import { defineConfig } from 'prisma/config'
 
-loadEnvFile()
+// a missing .env is fine (e.g. on a host that sets env vars directly)
+try {
+    loadEnvFile()
+} catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+}
 
 export default defineConfig({
     schema: 'prisma/schema.prisma',

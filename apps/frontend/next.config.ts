@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next'
 
+// Read at build time (rewrites are baked in). Set BACKEND_URL on Vercel.
+const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8090'
+
 const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
@@ -14,8 +17,8 @@ const nextConfig: NextConfig = {
   // Proxy to the Nest backend so the browser stays same-origin (no CORS).
   async rewrites() {
     return [
-      { source: '/api/:path*', destination: 'http://localhost:8090/api/:path*' },
-      { source: '/health', destination: 'http://localhost:8090/health' },
+      { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
+      { source: '/health', destination: `${backendUrl}/health` },
     ]
   },
   turbopack: {
