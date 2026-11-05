@@ -4,6 +4,7 @@ import { MobileNav } from '@/components/shell/MobileNav'
 import { SidebarNav } from '@/components/shell/SidebarNav'
 import { UserCard, UserCardSkeleton } from '@/components/shell/UserCard'
 import { getCredentials } from '@/features/auth/auth.server'
+import { MadeBy } from '@/features/about/components/MadeBy'
 import { HealthStatus } from '@/features/health/components/HealthStatus'
 
 /** Fixed left sidebar on desktop. */
@@ -24,6 +25,7 @@ export function AppSidebar() {
         <Suspense fallback={<UserCardSkeleton />}>
           <UserCard />
         </Suspense>
+        <MadeBy className="px-1.5 pt-1 text-[11px]" />
       </div>
     </aside>
   )

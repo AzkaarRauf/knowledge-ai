@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { Building2, MessagesSquare, ShieldCheck } from 'lucide-react'
 import { BrandMark } from '@/components/shell/Brand'
 import { buttonVariants } from '@/components/ui/button'
+import { MadeBy } from '@/features/about/components/MadeBy'
 import { GOOGLE_LOGIN_URL } from '@/features/auth/auth.api'
 
 // codes the backend puts in ?error= when google login fails
@@ -51,7 +52,7 @@ export function LoginForm() {
             ))}
           </ul>
         </div>
-        <p className="relative text-xs text-primary-foreground/60">© Knowledge AI. All rights reserved.</p>
+        <MadeBy className="relative text-primary-foreground/60 [&_a]:hover:text-primary-foreground" />
       </section>
 
       <section className="flex items-center justify-center bg-background p-6">
@@ -77,6 +78,7 @@ export function LoginForm() {
           <p className="text-xs text-muted-foreground">
             Access is invite-only. If you can&apos;t sign in, ask your admin to add you.
           </p>
+          <MadeBy className="lg:hidden" />
         </div>
       </section>
     </main>

@@ -1,5 +1,6 @@
 'use client'
 
+import { ConsoleSignature } from '@/features/about/components/ConsoleSignature'
 import { ColdStartGuard } from '@/features/cold-start/components/ColdStartGuard'
 import { showErrorToast } from '@/lib/error-toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -22,6 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>{children}</TooltipProvider>
       <Toaster richColors />
+      <ConsoleSignature />
       {/* usePathname needs a Suspense boundary to keep routes prerenderable; the guard renders nothing anyway. */}
       <Suspense fallback={null}>
         <ColdStartGuard />

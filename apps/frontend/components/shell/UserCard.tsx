@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AboutDialog } from '@/features/about/components/AboutDialog'
 import { getCredentials } from '@/features/auth/auth.server'
 import { LogoutButton } from '@/features/auth/components/logout-button'
 
@@ -25,6 +26,7 @@ export async function UserCard() {
           {isAdmin ? 'Admin' : 'Member'}
         </Badge>
       </div>
+      <AboutDialog />
       <LogoutButton />
     </div>
   )

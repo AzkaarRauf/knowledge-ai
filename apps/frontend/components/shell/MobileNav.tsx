@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { SidebarNav } from '@/components/shell/SidebarNav'
 import { Button } from '@/components/ui/button'
+import { MadeBy } from '@/features/about/components/MadeBy'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 /** Menu button for small screens; opens the same nav the sidebar shows. */
@@ -17,6 +18,7 @@ export function MobileNav({ isAdmin }: { isAdmin: boolean }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-3">
         <SidebarNav isAdmin={isAdmin} highlightActive onNavigate={() => setOpen(false)} />
+        <MadeBy className="mt-3 border-t px-1.5 pt-3 text-[11px]" />
       </PopoverContent>
     </Popover>
   )
