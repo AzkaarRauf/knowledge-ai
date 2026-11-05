@@ -1,31 +1,15 @@
 'use client'
 
-import { Info } from 'lucide-react'
 import { BrandMark } from '@/components/shell/Brand'
 import { Badge } from '@/components/ui/badge'
-import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { buttonVariants } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AUTHOR, STACK } from '@/features/about/author'
 
-/** Info button that opens a dialog about the app and who built it. */
-export function AboutDialog() {
+/** Dialog about the app and who built it. Opened from the settings menu. */
+export function AboutDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
-    <Dialog>
-      <Tooltip>
-        <TooltipTrigger render={<DialogTrigger render={<Button variant="ghost" size="icon-sm" aria-label="About" />} />}>
-          <Info />
-        </TooltipTrigger>
-        <TooltipContent>About</TooltipContent>
-      </Tooltip>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <div className="flex items-center gap-3">

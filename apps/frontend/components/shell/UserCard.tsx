@@ -1,8 +1,7 @@
+import { SettingsMenu } from '@/components/shell/SettingsMenu'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AboutDialog } from '@/features/about/components/AboutDialog'
 import { getCredentials } from '@/features/auth/auth.server'
-import { LogoutButton } from '@/features/auth/components/logout-button'
 
 /** Signed-in user at the bottom of the sidebar. Reads the cookie, so it sits in <Suspense>. */
 export async function UserCard() {
@@ -26,8 +25,7 @@ export async function UserCard() {
           {isAdmin ? 'Admin' : 'Member'}
         </Badge>
       </div>
-      <AboutDialog />
-      <LogoutButton />
+      <SettingsMenu />
     </div>
   )
 }
