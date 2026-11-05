@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { Building2, MessagesSquare, ShieldCheck } from 'lucide-react'
@@ -7,6 +8,7 @@ import { BrandMark } from '@/components/shell/Brand'
 import { buttonVariants } from '@/components/ui/button'
 import { MadeBy } from '@/features/about/components/MadeBy'
 import { GOOGLE_LOGIN_URL } from '@/features/auth/auth.api'
+import { PRIVACY_ROUTE, TERMS_ROUTE } from '@/features/legal/legal'
 
 // codes the backend puts in ?error= when google login fails
 const LOGIN_ERRORS: Record<string, string> = {
@@ -74,6 +76,17 @@ export function LoginForm() {
               <GoogleIcon />
               Continue with Google
             </a>
+            <p className="text-xs text-muted-foreground">
+              By continuing, you agree to our{' '}
+              <Link href={TERMS_ROUTE} className="font-medium text-foreground underline underline-offset-3">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href={PRIVACY_ROUTE} className="font-medium text-foreground underline underline-offset-3">
+                Privacy Policy
+              </Link>
+              . Chats and uploads are stored and can be read by the operator.
+            </p>
           </div>
           <p className="text-xs text-muted-foreground">
             Access is invite-only. If you can&apos;t sign in, ask your admin to add you.

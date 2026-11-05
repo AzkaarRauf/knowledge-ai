@@ -1,6 +1,7 @@
 'use client'
 
-import { Info, LogOut, Settings } from 'lucide-react'
+import { FileText, Info, LogOut, Settings, Shield } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AboutDialog } from '@/features/about/components/AboutDialog'
 import { useSignOut } from '@/features/auth/hooks/sign-out.hook'
+import { PRIVACY_ROUTE, TERMS_ROUTE } from '@/features/legal/legal'
 
 /** Gear button in the user card; holds About and Sign out. */
 export function SettingsMenu() {
@@ -28,6 +30,14 @@ export function SettingsMenu() {
           <DropdownMenuItem onClick={() => setAboutOpen(true)}>
             <Info />
             About
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href={PRIVACY_ROUTE} target="_blank" />}>
+            <Shield />
+            Privacy
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href={TERMS_ROUTE} target="_blank" />}>
+            <FileText />
+            Terms
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={signOut} disabled={isPending}>

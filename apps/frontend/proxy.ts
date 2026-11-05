@@ -1,11 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { REFRESH_TOKEN_COOKIE_NAME } from 'shared'
 import { COLD_START_ROUTE } from '@/features/cold-start/routes'
+import { PRIVACY_ROUTE, TERMS_ROUTE } from '@/features/legal/legal'
 
 // Kept local: importing `@/lib/auth` would pull axios into the proxy bundle.
 const LOGIN_ROUTE = '/auth/login'
 const AUTH_PREFIX = '/auth/'
 const HOME_ROUTE = '/'
+const PUBLIC_ROUTES = [PRIVACY_ROUTE, TERMS_ROUTE]
 
 // Keep the default *.vercel.app domain out of search results (duplicate of the custom domain).
 function withRobotsHeader(request: NextRequest, response: NextResponse) {
@@ -25,6 +27,9 @@ function handle(request: NextRequest) {
 
   // Reachable with or without a session, else a logged-out user on a cold start would loop via login.
   if (request.nextUrl.pathname.startsWith(COLD_START_ROUTE)) return NextResponse.next()
+
+  // Legal pages are public: people must read them before signing in.
+  if (PUBLIC_ROUTES.includes(request.nextUrl.pathname)) return NextResponse.next()
 
   // Logged-in users have no reason to see login. This also sends /auth/google/done home.
   if (isAuthPage) {
