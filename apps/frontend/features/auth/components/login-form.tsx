@@ -12,7 +12,7 @@ import { PRIVACY_ROUTE, TERMS_ROUTE } from '@/features/legal/legal'
 
 // codes the backend puts in ?error= when google login fails
 const LOGIN_ERRORS: Record<string, string> = {
-  not_invited: 'Your account has not been invited. Ask an admin to add you.',
+  not_invited: "Couldn't sign you in with this Google account.",
   google_failed: 'Google sign-in failed. Please try again.',
 }
 
@@ -62,7 +62,7 @@ export function LoginForm() {
           <div className="space-y-2">
             <BrandMark className="size-10 lg:hidden" />
             <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
-            <p className="text-sm text-muted-foreground">Use your work Google account to continue.</p>
+            <p className="text-sm text-muted-foreground">Use your Google account to continue.</p>
           </div>
           <div className="grid gap-4">
             <Suspense fallback={null}>
@@ -88,9 +88,6 @@ export function LoginForm() {
               . Chats and uploads are stored and can be read by the operator.
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Access is invite-only. If you can&apos;t sign in, ask your admin to add you.
-          </p>
           <MadeBy className="lg:hidden" />
         </div>
       </section>
