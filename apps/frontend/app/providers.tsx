@@ -4,7 +4,7 @@ import { ColdStartGuard } from '@/features/cold-start/components/ColdStartGuard'
 import { showErrorToast } from '@/lib/error-toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Toaster } from 'sonner'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -22,7 +22,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>{children}</TooltipProvider>
       <Toaster richColors />
-      <ColdStartGuard />
+      {/* usePathname needs a Suspense boundary to keep routes prerenderable; the guard renders nothing anyway. */}
+      <Suspense fallback={null}>
+        <ColdStartGuard />
+      </Suspense>
     </QueryClientProvider>
   )
 }
