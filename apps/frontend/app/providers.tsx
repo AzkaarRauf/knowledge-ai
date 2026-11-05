@@ -1,5 +1,6 @@
 'use client'
 
+import { ColdStartGuard } from '@/features/cold-start/components/ColdStartGuard'
 import { showErrorToast } from '@/lib/error-toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -21,6 +22,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>{children}</TooltipProvider>
       <Toaster richColors />
+      <ColdStartGuard />
     </QueryClientProvider>
   )
 }

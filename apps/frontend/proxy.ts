@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { REFRESH_TOKEN_COOKIE_NAME } from 'shared'
+import { COLD_START_ROUTE } from '@/features/cold-start/routes'
 
 // Kept local: importing `@/lib/auth` would pull axios into the proxy bundle.
 const LOGIN_ROUTE = '/auth/login'
@@ -21,6 +22,9 @@ export function proxy(request: NextRequest) {
 function handle(request: NextRequest) {
   const hasSession = request.cookies.has(REFRESH_TOKEN_COOKIE_NAME)
   const isAuthPage = request.nextUrl.pathname.startsWith(AUTH_PREFIX)
+
+  // Reachable with or without a session, else a logged-out user on a cold start would loop via login.
+  if (request.nextUrl.pathname.startsWith(COLD_START_ROUTE)) return NextResponse.next()
 
   // Logged-in users have no reason to see login. This also sends /auth/google/done home.
   if (isAuthPage) {
