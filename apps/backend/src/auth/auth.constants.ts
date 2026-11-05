@@ -4,6 +4,11 @@
 export const REFRESH_TOKEN_DURATION = 7 * 24 * 60 * 60 * 1000
 
 /**
+ * department given to users created on first google login
+ */
+export const DEFAULT_DEPARTMENT_NAME = 'General'
+
+/**
  * 5 minutes in ms
  */
 export const ACCESS_TOKEN_DURATION = 5 * 60 * 1000

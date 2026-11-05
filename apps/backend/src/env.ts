@@ -23,16 +23,6 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string().nonempty(),
     GOOGLE_CLIENT_SECRET: z.string().nonempty(),
     GOOGLE_REDIRECT_URI: z.url(),
-    // comma separated domains, e.g. "acme.com,acme.io". matched against google's `hd` claim
-    ALLOWED_DOMAINS: z
-        .string()
-        .transform((s) =>
-            s
-                .split(',')
-                .map((d) => d.trim().toLowerCase())
-                .filter(Boolean),
-        )
-        .pipe(z.array(z.string()).nonempty('At least one domain is required')),
     REDIS_CONNECTION_STRING: z.string().nonempty(),
     REDIS_CACHE_TTL_MS: z.coerce.number().optional(),
     // turn off the http throttler, e.g. for e2e tests. the gemini quota guard always stays on

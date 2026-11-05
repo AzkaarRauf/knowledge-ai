@@ -3,9 +3,8 @@ import { JwtService } from '@nestjs/jwt'
 import { Response } from 'express'
 import { ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME, Role } from 'shared'
 import { JwtPayloadDto } from 'src/common/dtos/jwt-payload.dto.js'
-import { env } from 'src/env.js'
 import { PrismaService } from 'src/prisma/prisma.service.js'
-import { REFRESH_TOKEN_DURATION } from './auth.constants.js'
+import { DEFAULT_DEPARTMENT_NAME, REFRESH_TOKEN_DURATION } from './auth.constants.js'
 import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto.js'
 import { GoogleUser } from './google/google.strategy.js'
 import { NotInvitedException } from './google/not-invited.exception.js'
@@ -22,29 +21,44 @@ export class AuthService {
     async loginWithGoogle(googleUser: GoogleUser, res: Response) {
         if (!googleUser.emailVerified) throw new NotInvitedException()
 
-        const user = await this.db.user.findFirst({
+        const existing = await this.db.user.findFirst({
             where: {
-                OR: [
-                    { googleId: googleUser.googleId },
-                    { email: { equals: googleUser.email, mode: 'insensitive' }, googleId: null },
-                ],
+                OR: [{ googleId: googleUser.googleId }, { email: { equals: googleUser.email, mode: 'insensitive' } }],
             },
             include: { department: { select: { id: true, name: true } } },
         })
-        if (!user) throw new NotInvitedException()
+        // email already linked to a different google account
+        if (existing?.googleId && existing.googleId !== googleUser.googleId) throw new NotInvitedException()
 
-        // admins can use any email (e.g. gmail). everyone else must be from one of permitted workspace domains
-        if (user.role !== 'ADMIN') {
-            const domain = googleUser.hd?.toLowerCase()
-            if (!domain || !env.ALLOWED_DOMAINS.includes(domain)) throw new NotInvitedException()
+        if (!existing) {
+            const user = await this.createGoogleUser(googleUser)
+            await this.issueSession(user, res)
+            return
         }
 
-        // first google login: link this google account to the invited user
-        if (user.googleId === null) {
-            await this.db.user.update({ where: { id: user.id }, data: { googleId: googleUser.googleId } })
+        // first google login: link this google account to the existing user
+        if (existing.googleId === null) {
+            await this.db.user.update({ where: { id: existing.id }, data: { googleId: googleUser.googleId } })
         }
 
-        await this.issueSession(user, res)
+        await this.issueSession(existing, res)
+    }
+
+    private async createGoogleUser(googleUser: GoogleUser) {
+        const department = await this.db.department.upsert({
+            where: { name: DEFAULT_DEPARTMENT_NAME },
+            update: {},
+            create: { name: DEFAULT_DEPARTMENT_NAME },
+        })
+        return this.db.user.create({
+            data: {
+                email: googleUser.email.toLowerCase(),
+                name: googleUser.name || googleUser.email,
+                googleId: googleUser.googleId,
+                departmentId: department.id,
+            },
+            include: { department: { select: { id: true, name: true } } },
+        })
     }
 
     private async issueSession(user: { email: string; id: string; role: Role; department: { id: string } }, res: Response) {
