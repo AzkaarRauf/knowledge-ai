@@ -35,9 +35,10 @@ const envSchema = z.object({
         .transform((v): boolean | number | string => {
             if (v === 'true') return true
             if (v === 'false') return false
-            if (/^d+$/.test(v)) return Number(v)
+            if (/^\d+$/.test(v)) return Number(v)
             return v
         }),
+    PRISMA_PROVIDER: z.enum(['local', 'neon']),
 })
 
 export const env = envSchema.parse(process.env)

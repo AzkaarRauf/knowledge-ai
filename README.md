@@ -10,7 +10,7 @@ pnpm monorepo:
 
 - Node.js 24+
 - pnpm 12 (`corepack enable`)
-- [Neon](https://neon.tech) PostgreSQL database (local Postgres won't work: the backend uses the Neon serverless adapter)
+- Docker (runs Postgres + pgvector and Redis locally). Or use [Neon](https://neon.tech) with `PRISMA_PROVIDER=neon`
 
 ## Setup
 
@@ -21,16 +21,36 @@ pnpm install
 # 2. Env files
 cp apps/backend/.env.example apps/backend/.env
 cp apps/frontend/.env.example apps/frontend/.env
-# then fill DATABASE_URL and JWT_SECRET in apps/backend/.env
+# then fill apps/backend/.env. For the docker services use:
+#   PRISMA_PROVIDER=local
+#   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/knowledge_ai
+#   REDIS_CONNECTION_STRING=redis://localhost:6379
 
-# 3. Build shared package
+# 3. Start Postgres and Redis
+docker compose up -d
+
+# 4. Build shared package
 pnpm shared build
 
-# 4. Database: run migrations, generate client, seed
-pnpm prisma migrate dev
+# 5. Database: generate client, run migrations, seed (seed needs SEED_ADMIN_EMAIL)
 pnpm prisma generate
+pnpm prisma migrate deploy
 pnpm prisma db seed
 ```
+
+`PRISMA_PROVIDER` picks the db driver: `local` for plain Postgres (docker), `neon` for Neon (prod).
+
+### Copy data from Neon (optional)
+
+Instead of step 5's migrate and seed, restore a Neon dump into the local db. Use Neon's direct url (no `-pooler` in the host). Neon's Postgres major version must not be newer than the docker image's (pg18).
+
+```bash
+docker compose exec db psql -U postgres -d postgres -c "DROP DATABASE knowledge_ai WITH (FORCE);" -c "CREATE DATABASE knowledge_ai;"
+docker compose exec db pg_dump "<neon-direct-url>?sslmode=require" -Fc --no-owner --no-acl -f /tmp/neon.dump
+docker compose exec db pg_restore -U postgres -d knowledge_ai --no-owner --no-acl /tmp/neon.dump
+```
+
+Errors about Neon-only extensions or roles are fine. Files stay in S3 storage; only the db is copied.
 
 ## Run
 

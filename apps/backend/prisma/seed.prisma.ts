@@ -1,4 +1,4 @@
-import { PrismaNeon } from '@prisma/adapter-neon'
+import { createPrismaAdapter } from 'src/common/utils/prisma.utils.js'
 import { env } from '../src/env.js'
 import { PrismaClient, Role } from '../src/generated/prisma/client.js'
 import { UserCreateInput } from '../src/generated/prisma/models.js'
@@ -9,7 +9,7 @@ const departments = ['HR', 'IT']
 await seed()
 async function seed() {
     if (!SEED_ADMIN_EMAIL) throw new Error('Required env missing')
-    const adapter = new PrismaNeon({ connectionString: env.DATABASE_URL })
+    const adapter = createPrismaAdapter()
     const client = new PrismaClient({ adapter })
     const email = SEED_ADMIN_EMAIL
     const name = 'Admin'
