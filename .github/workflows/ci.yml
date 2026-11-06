@@ -16,9 +16,6 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    env:
-      # dummy value. prisma generate and unit tests need it set, but never connect
-      DATABASE_URL: postgresql://user:pass@localhost:5432/db
     steps:
       - uses: actions/checkout@v4
 
