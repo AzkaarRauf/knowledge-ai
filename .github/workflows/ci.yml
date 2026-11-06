@@ -62,6 +62,8 @@ jobs:
   deploy-backend:
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    # RENDER_DEPLOY_HOOK_URL is an environment secret, so the job must name its environment
+    environment: check
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render deploy
