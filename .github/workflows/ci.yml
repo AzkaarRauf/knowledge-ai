@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+
+# cancel old runs on the same branch when a new commit is pushed
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # dummy value. prisma generate and unit tests need it set, but never connect
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
+    steps:
+      - uses: actions/checkout@v4
+
+      # reads the pnpm version from packageManager in package.json
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # backend and frontend import shared from its dist folder
+      - name: Build shared
+        run: pnpm shared build
+
+      # generated client is gitignored
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Format check
+        run: pnpm -r format:check
+
+      # lint scripts use --fix, so fail if they changed any file
+      - name: Lint
+        run: |
+          pnpm lint
+          git diff --exit-code
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Backend tests
+        run: pnpm be test
+
+      - name: Build backend
+        run: pnpm be build
+
+      - name: Build frontend
+        run: pnpm fe build
